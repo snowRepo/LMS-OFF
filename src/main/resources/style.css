@@ -1,0 +1,16 @@
+/* 
+ * Minimal CSS to override Modena's default button hover fade 
+ */
+.button:default:hover {
+    /* Keep the background color exactly the same as the default state */
+    -fx-color: -fx-default-button;
+}
+
+/* Global Table Formatting */
+.table-view .column-header .label {
+    -fx-alignment: center;
+}
+
+.table-view .table-cell {
+    -fx-alignment: center;
+}
