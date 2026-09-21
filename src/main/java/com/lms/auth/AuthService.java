@@ -67,7 +67,7 @@ public class AuthService {
      * Authenticates a user by username and password.
      */
     public Optional<User> login(String username, String password) {
-        String sql = "SELECT id, full_name, username, password_hash, role, must_change_password, is_active FROM users WHERE username = ?";
+        String sql = "SELECT id, full_name, username, password_hash, role, must_change_password, is_active, last_password_change FROM users WHERE username = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, username.trim().toLowerCase());
             ResultSet rs = ps.executeQuery();
@@ -78,12 +78,28 @@ public class AuthService {
                 }
                 String hash = rs.getString("password_hash");
                 if (BCrypt.checkpw(password, hash)) {
+                    boolean mustChange = rs.getInt("must_change_password") == 1;
+                    
+                    // Check 30-day expiry
+                    String lastChangeStr = rs.getString("last_password_change");
+                    if (lastChangeStr != null && !lastChangeStr.isBlank()) {
+                        try {
+                            // SQLite DATETIME is typically "YYYY-MM-DD HH:MM:SS"
+                            java.time.LocalDateTime lastChange = java.time.LocalDateTime.parse(lastChangeStr.replace(" ", "T"));
+                            if (java.time.LocalDateTime.now().isAfter(lastChange.plusDays(30))) {
+                                mustChange = true;
+                            }
+                        } catch (Exception e) {
+                            // fallback
+                        }
+                    }
+
                     User user = new User(
                             rs.getInt("id"),
                             rs.getString("full_name"),
                             rs.getString("username"),
                             rs.getString("role"),
-                            rs.getInt("must_change_password") == 1
+                            mustChange
                     );
                     SessionManager.setCurrentUser(user);
                     ActivityLogDAO.log(user, "LOGIN", "User logged in successfully");
@@ -133,7 +149,7 @@ public class AuthService {
      */
     public void updatePassword(String username, String newPassword) {
         String passHash = BCrypt.hashpw(newPassword, BCrypt.gensalt(12));
-        String sql = "UPDATE users SET password_hash = ? WHERE username = ?";
+        String sql = "UPDATE users SET password_hash = ?, last_password_change = CURRENT_TIMESTAMP WHERE username = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, passHash);
             ps.setString(2, username.trim().toLowerCase());
@@ -145,12 +161,46 @@ public class AuthService {
     }
 
     /**
+     * Verifies the current password for a specific user.
+     */
+    public boolean verifyPassword(String username, String password) {
+        String sql = "SELECT password_hash FROM users WHERE username = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, username.trim().toLowerCase());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                String hash = rs.getString("password_hash");
+                return BCrypt.checkpw(password, hash);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to verify password", e);
+        }
+        return false;
+    }
+
+    /**
+     * Updates the PIN for a given user.
+     */
+    public void updatePin(String username, String newPin) {
+        String pinHash = BCrypt.hashpw(newPin, BCrypt.gensalt(12));
+        String sql = "UPDATE users SET pin_hash = ? WHERE username = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, pinHash);
+            ps.setString(2, username.trim().toLowerCase());
+            ps.executeUpdate();
+            ActivityLogDAO.log("UPDATE_PIN", "Updated PIN for user: " + username);
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update PIN", e);
+        }
+    }
+
+    /**
      * Force changes password and PIN on first login, and clears the must_change flag.
      */
     public void forceChangePasswordAndPin(String username, String newPassword, String newPin) {
         String passHash = BCrypt.hashpw(newPassword, BCrypt.gensalt(12));
         String pinHash  = BCrypt.hashpw(newPin, BCrypt.gensalt(12));
-        String sql = "UPDATE users SET password_hash = ?, pin_hash = ?, must_change_password = 0 WHERE username = ?";
+        String sql = "UPDATE users SET password_hash = ?, pin_hash = ?, must_change_password = 0, last_password_change = CURRENT_TIMESTAMP WHERE username = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, passHash);
             ps.setString(2, pinHash);

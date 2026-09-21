@@ -166,8 +166,12 @@ public class DatabaseManager {
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS sync_config (
                     id                  INTEGER PRIMARY KEY CHECK (id = 1), -- Single row
-                    server_url          TEXT,
-                    auth_token          TEXT,
+                    db_type             TEXT,
+                    server_host         TEXT,
+                    server_port         TEXT,
+                    db_name             TEXT,
+                    db_user             TEXT,
+                    db_pass             TEXT,
                     last_sync_time      DATETIME,
                     sync_interval_mins  INTEGER DEFAULT 60,
                     is_enabled          INTEGER DEFAULT 0
@@ -183,26 +187,129 @@ public class DatabaseManager {
                     action_type TEXT NOT NULL,
                     description TEXT NOT NULL,
                     created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users(id)
                 )
             """);
 
+            // Sync Log for offline changes
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS sync_log (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    table_name  TEXT NOT NULL,
+                    record_id   TEXT NOT NULL,
+                    operation   TEXT NOT NULL,
+                    synced      INTEGER DEFAULT 0,
+                    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """);
+
             // --- MIGRATIONS ---
-            try {
-                stmt.execute("ALTER TABLE categories ADD COLUMN is_active INTEGER DEFAULT 1");
-            } catch (SQLException ignore) {
-                // Column already exists
-            }
-
-            try {
-                stmt.execute("ALTER TABLE members ADD COLUMN dob DATE");
-            } catch (SQLException ignore) {}
-
+            try { stmt.execute("ALTER TABLE categories ADD COLUMN is_active INTEGER DEFAULT 1"); } catch (SQLException ignore) {}
+            try { stmt.execute("ALTER TABLE members ADD COLUMN dob DATE"); } catch (SQLException ignore) {}
             try { stmt.execute("ALTER TABLE users ADD COLUMN email TEXT"); } catch (SQLException ignore) {}
             try { stmt.execute("ALTER TABLE users ADD COLUMN phone TEXT"); } catch (SQLException ignore) {}
             try { stmt.execute("ALTER TABLE users ADD COLUMN dob DATE"); } catch (SQLException ignore) {}
             try { stmt.execute("ALTER TABLE users ADD COLUMN is_active INTEGER DEFAULT 1"); } catch (SQLException ignore) {}
             try { stmt.execute("ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0"); } catch (SQLException ignore) {}
+            
+            try { 
+                stmt.execute("ALTER TABLE users ADD COLUMN last_password_change DATETIME"); 
+                stmt.execute("UPDATE users SET last_password_change = CURRENT_TIMESTAMP WHERE last_password_change IS NULL");
+            } catch (SQLException ignore) {}
+            
+            // Add updated_at columns
+            String[] tables = {"users", "members", "categories", "books", "borrow_records", "attendance"};
+            for (String table : tables) {
+                try { 
+                    stmt.execute("ALTER TABLE " + table + " ADD COLUMN updated_at DATETIME"); 
+                    stmt.execute("UPDATE " + table + " SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL");
+                } catch (SQLException ignore) {}
+            }
+
+            // --- TRIGGERS FOR SYNC LOG & UPDATED_AT ---
+            for (String table : tables) {
+                // Update updated_at on UPDATE
+                stmt.execute(String.format("""
+                    CREATE TRIGGER IF NOT EXISTS trg_%s_updated_at 
+                    AFTER UPDATE ON %s
+                    BEGIN
+                        UPDATE %s SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+                    END;
+                """, table, table, table));
+
+                // Log INSERT to sync_log
+                stmt.execute(String.format("""
+                    CREATE TRIGGER IF NOT EXISTS trg_%s_sync_insert 
+                    AFTER INSERT ON %s
+                    BEGIN
+                        INSERT INTO sync_log (table_name, record_id, operation) VALUES ('%s', NEW.id, 'INSERT');
+                    END;
+                """, table, table, table));
+
+                // Log UPDATE to sync_log
+                stmt.execute(String.format("""
+                    CREATE TRIGGER IF NOT EXISTS trg_%s_sync_update 
+                    AFTER UPDATE ON %s
+                    BEGIN
+                        INSERT INTO sync_log (table_name, record_id, operation) VALUES ('%s', NEW.id, 'UPDATE');
+                    END;
+                """, table, table, table));
+
+                // Log DELETE to sync_log
+                stmt.execute(String.format("""
+                    CREATE TRIGGER IF NOT EXISTS trg_%s_sync_delete 
+                    AFTER DELETE ON %s
+                    BEGIN
+                        INSERT INTO sync_log (table_name, record_id, operation) VALUES ('%s', OLD.id, 'DELETE');
+                    END;
+                """, table, table, table));
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Data Management
+    // -------------------------------------------------------------------------
+
+    public void wipeLocalKeepAdmin() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            stmt.execute("DELETE FROM sync_log");
+            stmt.execute("DELETE FROM activity_logs");
+            stmt.execute("DELETE FROM attendance");
+            stmt.execute("DELETE FROM borrow_records");
+            stmt.execute("DELETE FROM books");
+            stmt.execute("DELETE FROM categories");
+            stmt.execute("DELETE FROM members");
+            stmt.execute("DELETE FROM users WHERE role != 'ADMIN'");
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+    }
+
+    public void wipeEverything() throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            connection.setAutoCommit(false);
+            stmt.execute("DELETE FROM sync_log");
+            stmt.execute("DELETE FROM activity_logs");
+            stmt.execute("DELETE FROM attendance");
+            stmt.execute("DELETE FROM borrow_records");
+            stmt.execute("DELETE FROM books");
+            stmt.execute("DELETE FROM categories");
+            stmt.execute("DELETE FROM members");
+            stmt.execute("DELETE FROM users");
+            stmt.execute("DELETE FROM sync_config");
+            connection.commit();
+        } catch (SQLException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
         }
     }
 }

@@ -149,6 +149,7 @@ public class CirculationView {
                             Button btnReturn = new Button("Return");
                             btnReturn.setOnAction(e -> {
                                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+alert.initOwner(com.lms.util.Navigator.getStage());
                                 alert.setTitle("Confirm Book Return");
                                 alert.setHeaderText(null);
                                 if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -201,6 +202,7 @@ public class CirculationView {
 
     private void showIssueDialog() {
         Dialog<Boolean> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle("Issue Book");
         dialog.setHeaderText(null);
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -330,6 +332,7 @@ public class CirculationView {
     }
     private void showDetailsDialog(CirculationDAO.CirculationRecord rec) {
         Dialog<Void> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle("Circulation Details");
         dialog.setHeaderText(null);
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {

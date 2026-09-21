@@ -152,6 +152,7 @@ public class StaffView {
                         Button btnToggle = new Button(staff.isActive() ? "Deactivate" : "Activate");
                         btnToggle.setOnAction(e -> {
                             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+alert.initOwner(com.lms.util.Navigator.getStage());
                             alert.setTitle("Confirm Status Change");
                             alert.setHeaderText(null);
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -169,6 +170,7 @@ public class StaffView {
                         Button btnReset = new Button("Reset");
                         btnReset.setOnAction(e -> {
                             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+alert.initOwner(com.lms.util.Navigator.getStage());
                             alert.setTitle("Confirm Password Reset");
                             alert.setHeaderText(null);
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -209,6 +211,7 @@ public class StaffView {
 
     private void showStaffDialog(UserDAO.Staff staffToEdit) {
         Dialog<Void> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle(staffToEdit == null ? "Add Staff" : "Edit Staff");
         dialog.setHeaderText(null);
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -290,6 +293,7 @@ public class StaffView {
     
     private void showCredentialsAlert(String username, String tempPass) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+alert.initOwner(com.lms.util.Navigator.getStage());
         alert.setTitle("Account Credentials");
         alert.setHeaderText("Please copy and provide these credentials to the staff member.");
         

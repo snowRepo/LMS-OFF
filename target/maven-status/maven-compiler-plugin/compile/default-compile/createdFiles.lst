@@ -14,12 +14,14 @@ com/lms/util/ToastUtil.class
 com/lms/auth/LoginView.class
 com/lms/ui/CatalogView$1.class
 com/lms/ui/AttendanceView$2.class
+com/lms/db/SyncConfigDAO.class
 com/lms/ui/CirculationView$1.class
 com/lms/db/AttendanceDAO$AttendanceRecord.class
 com/lms/auth/AuthService.class
 com/lms/Launcher.class
 com/lms/ui/CategoryView.class
 com/lms/ui/DashboardMetricsView$1.class
+com/lms/sync/SyncManager.class
 com/lms/db/DatabaseManager.class
 com/lms/ui/AttendanceView$1.class
 com/lms/db/CategoryDAO$Category.class
@@ -38,6 +40,7 @@ com/lms/model/User.class
 com/lms/db/MemberDAO$Member.class
 com/lms/ui/ActivityLogView.class
 com/lms/ui/CirculationView$3.class
+com/lms/ui/SettingsView.class
 com/lms/ui/StaffView$2.class
 com/lms/db/CirculationDAO.class
 com/lms/db/DashboardDAO$DashboardMetrics.class
@@ -49,6 +52,7 @@ com/lms/ui/MemberView$2.class
 com/lms/db/ActivityLogDAO.class
 com/lms/ui/AttendanceView$3.class
 com/lms/ui/StaffView.class
+com/lms/db/SyncConfigDAO$SyncConfig.class
 com/lms/db/UserDAO.class
 com/lms/db/CategoryDAO.class
 com/lms/db/ActivityLogDAO$ActivityLog.class

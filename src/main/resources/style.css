@@ -14,3 +14,14 @@
 .table-view .table-cell {
     -fx-alignment: center;
 }
+
+/* Pagination default selection fix */
+.pagination .pagination-control .number-button:selected {
+    -fx-background-color: #039ED3;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.pagination .pagination-control .number-button:selected:hover {
+    -fx-background-color: #0284c7;
+}

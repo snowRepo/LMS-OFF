@@ -152,6 +152,7 @@ public class MemberView {
                         Button btnToggle = new Button(member.isActive() ? "Deactivate" : "Activate");
                         btnToggle.setOnAction(e -> {
                             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+alert.initOwner(com.lms.util.Navigator.getStage());
                             alert.setTitle("Confirm Status Change");
                             alert.setHeaderText(null);
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
@@ -195,6 +196,7 @@ public class MemberView {
 
     private void showMemberDialog(MemberDAO.Member memberToEdit) {
         Dialog<Boolean> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle(memberToEdit == null ? "Add Member" : "Edit Member");
         dialog.setHeaderText(null);
         

@@ -133,6 +133,7 @@ public class CatalogView {
                         
                         btnDelete.setOnAction(e -> {
                             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete '" + book.title() + "'?", ButtonType.YES, ButtonType.NO);
+confirm.initOwner(com.lms.util.Navigator.getStage());
                             confirm.setHeaderText("Confirm Deletion");
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
                                 confirm.initOwner(txtSearch.getScene().getWindow());
@@ -174,6 +175,7 @@ public class CatalogView {
 
     private void showBookDialog(BookDAO.Book bookToEdit) {
         Dialog<Boolean> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle(bookToEdit == null ? "Add Book" : "Edit Book");
         dialog.setHeaderText(null);
         

@@ -149,6 +149,7 @@ public class CategoryView {
                         Button btnDelete = new Button("Delete");
                         btnDelete.setOnAction(e -> {
                             Alert confirm = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete '" + cat.name() + "'?", ButtonType.YES, ButtonType.NO);
+confirm.initOwner(com.lms.util.Navigator.getStage());
                             confirm.setHeaderText("Confirm Deletion");
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
                                 confirm.initOwner(txtSearch.getScene().getWindow());
@@ -188,6 +189,7 @@ public class CategoryView {
 
     private void showCategoryDialog(CategoryDAO.Category catToEdit) {
         Dialog<Boolean> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle(catToEdit == null ? "Add Category" : "Edit Category");
         dialog.setHeaderText(null);
         

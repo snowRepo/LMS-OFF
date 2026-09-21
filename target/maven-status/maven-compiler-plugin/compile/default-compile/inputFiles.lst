@@ -17,8 +17,10 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/DashboardDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/DatabaseManager.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/MemberDAO.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/db/SyncConfigDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/UserDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/model/User.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/sync/SyncManager.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/ActivityLogView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/AttendanceView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/CatalogView.java
@@ -29,6 +31,7 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/MainDashboardView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/MemberView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/ReportsView.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/ui/SettingsView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/StaffView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/Navigator.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/ReportExporter.java

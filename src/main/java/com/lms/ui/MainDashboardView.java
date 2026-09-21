@@ -104,6 +104,27 @@ public class MainDashboardView {
         btnSync.setStyle("-fx-font-size: 11px;");
         HBox.setHgrow(btnSync, javafx.scene.layout.Priority.ALWAYS);
         
+        btnSync.setOnAction(e -> {
+            btnSync.setText("Syncing...");
+            btnSync.setDisable(true);
+            new com.lms.sync.SyncManager().sync(
+                () -> {
+                    btnSync.setText("Sync Now");
+                    btnSync.setDisable(false);
+                    lblSyncStatus.setText("● Synced " + java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now()));
+                    lblSyncStatus.setStyle("-fx-text-fill: #22c55e; -fx-font-size: 11px;");
+                    com.lms.util.ToastUtil.show("Cloud sync complete!");
+                },
+                () -> {
+                    btnSync.setText("Sync Now");
+                    btnSync.setDisable(false);
+                    lblSyncStatus.setText("● Sync Failed");
+                    lblSyncStatus.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 11px;");
+                    com.lms.util.ToastUtil.show("Cloud sync failed.");
+                }
+            );
+        });
+        
         Button btnLogout = new Button("Logout");
         btnLogout.setMaxWidth(Double.MAX_VALUE);
         btnLogout.setStyle("-fx-font-size: 11px; -fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold;");
@@ -149,7 +170,7 @@ public class MainDashboardView {
             com.lms.ui.ReportsView view = new com.lms.ui.ReportsView();
             routeTo(btnReports, contentPane, view.build());
         });
-        btnSettings.setOnAction(e -> routeTo(btnSettings, contentPane, new Label("Settings Module (Coming Soon)")));
+        btnSettings.setOnAction(e -> routeTo(btnSettings, contentPane, new SettingsView().build()));
 
         // Removed redundant block
 

@@ -190,6 +190,7 @@ public class AttendanceView {
 
     private void showCheckInDialog() {
         Dialog<Boolean> dialog = new Dialog<>();
+dialog.initOwner(com.lms.util.Navigator.getStage());
         dialog.setTitle("Check In Member");
         dialog.setHeaderText(null);
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
