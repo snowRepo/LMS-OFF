@@ -94,7 +94,11 @@ public class CategoryDAO {
             ps.setString(1, name.trim());
             ps.setString(2, description != null ? description.trim() : null);
             ps.setInt(3, isActive ? 1 : 0);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ADD_CATEGORY", "Added category: " + name.trim());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -108,7 +112,11 @@ public class CategoryDAO {
             ps.setString(2, description != null ? description.trim() : null);
             ps.setInt(3, isActive ? 1 : 0);
             ps.setInt(4, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_CATEGORY", "Updated category: " + name.trim());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -133,7 +141,11 @@ public class CategoryDAO {
         String sql = "DELETE FROM categories WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("DELETE_CATEGORY", "Deleted category ID: " + id);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

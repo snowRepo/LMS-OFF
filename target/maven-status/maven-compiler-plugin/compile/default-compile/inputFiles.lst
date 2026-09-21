@@ -5,9 +5,11 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/LoginView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/RegisterPinView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/RegisterView.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/auth/SessionManager.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/setup/AgreementView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/setup/DbSetupView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/auth/setup/WelcomeView.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/db/ActivityLogDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/AttendanceDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/BookDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/CategoryDAO.java
@@ -17,6 +19,7 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/MemberDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/db/UserDAO.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/model/User.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/ui/ActivityLogView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/AttendanceView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/CatalogView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/CategoryView.java
@@ -25,6 +28,8 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/ForcePasswordChangeView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/MainDashboardView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/MemberView.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/ui/ReportsView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/StaffView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/Navigator.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/util/ReportExporter.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/ToastUtil.java

@@ -1,6 +1,7 @@
 package com.lms.auth;
 
 import com.lms.db.DatabaseManager;
+import com.lms.db.ActivityLogDAO;
 import com.lms.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -52,6 +53,7 @@ public class AuthService {
             ps.setString(4, pinHash);
             ps.setString(5, role);
             ps.executeUpdate();
+            ActivityLogDAO.log("REGISTER", "Registered new user: " + username);
             return true;
         } catch (SQLException e) {
             if (e.getMessage().contains("UNIQUE")) {
@@ -83,6 +85,8 @@ public class AuthService {
                             rs.getString("role"),
                             rs.getInt("must_change_password") == 1
                     );
+                    SessionManager.setCurrentUser(user);
+                    ActivityLogDAO.log(user, "LOGIN", "User logged in successfully");
                     return Optional.of(user);
                 }
             }
@@ -134,6 +138,7 @@ public class AuthService {
             ps.setString(1, passHash);
             ps.setString(2, username.trim().toLowerCase());
             ps.executeUpdate();
+            ActivityLogDAO.log("UPDATE_PASSWORD", "Updated password for user: " + username);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update password", e);
         }
@@ -151,6 +156,7 @@ public class AuthService {
             ps.setString(2, pinHash);
             ps.setString(3, username.trim().toLowerCase());
             ps.executeUpdate();
+            ActivityLogDAO.log("UPDATE_PASSWORD", "Forced password/PIN change for user: " + username);
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update password and PIN", e);
         }
@@ -171,6 +177,7 @@ public class AuthService {
                         rs.getString("role"),
                         rs.getInt("must_change_password") == 1
                 );
+                SessionManager.setCurrentUser(user);
                 return Optional.of(user);
             }
         } catch (SQLException e) {

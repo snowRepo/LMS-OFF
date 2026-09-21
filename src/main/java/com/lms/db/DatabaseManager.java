@@ -174,6 +174,19 @@ public class DatabaseManager {
                 )
             """);
 
+            // Activity Logs
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS activity_logs (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id     INTEGER,
+                    username    TEXT,
+                    action_type TEXT NOT NULL,
+                    description TEXT NOT NULL,
+                    created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """);
+
             // --- MIGRATIONS ---
             try {
                 stmt.execute("ALTER TABLE categories ADD COLUMN is_active INTEGER DEFAULT 1");

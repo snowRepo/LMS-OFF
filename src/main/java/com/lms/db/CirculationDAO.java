@@ -148,6 +148,7 @@ public class CirculationDAO {
             }
 
             conn.commit();
+            ActivityLogDAO.log("BORROW_BOOK", "Issued book ID: " + bookId + " to member ID: " + memberId);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -181,6 +182,7 @@ public class CirculationDAO {
             }
 
             conn.commit();
+            ActivityLogDAO.log("RETURN_BOOK", "Returned book ID: " + bookId + " for record ID: " + borrowId);
             return true;
         } catch (SQLException e) {
             e.printStackTrace();

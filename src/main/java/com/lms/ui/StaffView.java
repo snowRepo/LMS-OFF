@@ -7,6 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.scene.shape.Circle;
+import javafx.scene.paint.Color;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +52,7 @@ public class StaffView {
         HBox.setHgrow(spacer, Priority.ALWAYS);
 
         Button btnAdd = new Button("+ Add Staff");
-        btnAdd.setOnAction(e -> showAddDialog());
+        btnAdd.setOnAction(e -> showStaffDialog(null));
 
         topControls.getChildren().addAll(txtSearch, cbStatus, spacer, btnAdd);
 
@@ -93,8 +95,8 @@ public class StaffView {
             TableColumn<UserDAO.Staff, String> colUsername = new TableColumn<>("Username");
             colUsername.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().username()));
             
-            TableColumn<UserDAO.Staff, String> colEmail = new TableColumn<>("Email");
-            colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().email() != null ? data.getValue().email() : ""));
+            TableColumn<UserDAO.Staff, String> colPhone = new TableColumn<>("Phone");
+            colPhone.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().phone() != null ? data.getValue().phone() : ""));
             
             TableColumn<UserDAO.Staff, String> colDate = new TableColumn<>("Date Created");
             colDate.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().createdAt() != null ? data.getValue().createdAt() : ""));
@@ -102,13 +104,37 @@ public class StaffView {
             TableColumn<UserDAO.Staff, String> colRole = new TableColumn<>("Role");
             colRole.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().role()));
             
-            TableColumn<UserDAO.Staff, String> colStatus = new TableColumn<>("Status");
-            colStatus.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().isActive() ? "Active" : "Inactive"));
+            TableColumn<UserDAO.Staff, Void> colStatus = new TableColumn<>("Status");
+            colStatus.setPrefWidth(90);
+            colStatus.setMinWidth(90);
+            colStatus.setMaxWidth(90);
+            colStatus.setCellFactory(column -> new TableCell<>() {
+                @Override
+                protected void updateItem(Void item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || getTableRow() == null || getTableRow().getItem() == null) {
+                        setGraphic(null);
+                    } else {
+                        UserDAO.Staff staff = getTableRow().getItem();
+                        HBox box = new HBox(6);
+                        box.setAlignment(Pos.CENTER);
+                        
+                        Circle dot = new Circle(4);
+                        dot.setFill(staff.isActive() ? Color.web("#22c55e") : Color.web("#9ca3af"));
+                        
+                        Label lbl = new Label(staff.isActive() ? "Active" : "Inactive");
+                        lbl.setStyle("-fx-text-fill: #3f3f46;");
+                        
+                        box.getChildren().addAll(dot, lbl);
+                        setGraphic(box);
+                    }
+                }
+            });
             
             TableColumn<UserDAO.Staff, Void> colActions = new TableColumn<>("Actions");
-            colActions.setPrefWidth(140);
-            colActions.setMinWidth(140);
-            colActions.setMaxWidth(140);
+            colActions.setPrefWidth(190);
+            colActions.setMinWidth(190);
+            colActions.setMaxWidth(190);
             colActions.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
@@ -119,6 +145,9 @@ public class StaffView {
                         UserDAO.Staff staff = getTableRow().getItem();
                         HBox box = new HBox(8);
                         box.setAlignment(Pos.CENTER);
+                        
+                        Button btnEdit = new Button("Edit");
+                        btnEdit.setOnAction(e -> showStaffDialog(staff));
                         
                         Button btnToggle = new Button(staff.isActive() ? "Deactivate" : "Activate");
                         btnToggle.setOnAction(e -> {
@@ -155,13 +184,13 @@ public class StaffView {
                             }
                         });
 
-                        box.getChildren().addAll(btnToggle, btnReset);
+                        box.getChildren().addAll(btnEdit, btnToggle, btnReset);
                         setGraphic(box);
                     }
                 }
             });
 
-            table.getColumns().addAll(colName, colUsername, colEmail, colRole, colDate, colStatus, colActions);
+            table.getColumns().addAll(colName, colUsername, colPhone, colRole, colDate, colStatus, colActions);
         }
         
         loadTableData(pageIndex);
@@ -178,15 +207,15 @@ public class StaffView {
         table.getItems().setAll(data);
     }
 
-    private void showAddDialog() {
+    private void showStaffDialog(UserDAO.Staff staffToEdit) {
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Add Staff");
+        dialog.setTitle(staffToEdit == null ? "Add Staff" : "Edit Staff");
         dialog.setHeaderText(null);
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
             dialog.initOwner(txtSearch.getScene().getWindow());
         }
         
-        ButtonType btnSaveType = new ButtonType("Create Account", ButtonBar.ButtonData.OK_DONE);
+        ButtonType btnSaveType = new ButtonType(staffToEdit == null ? "Create Account" : "Update Account", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(btnSaveType, ButtonType.CANCEL);
         
         VBox layout = new VBox(10);
@@ -209,11 +238,22 @@ public class StaffView {
         dpDob.setPromptText("Date of Birth");
         dpDob.setMaxWidth(Double.MAX_VALUE);
         
+        if (staffToEdit != null) {
+            txtName.setText(staffToEdit.fullName());
+            txtUsername.setText(staffToEdit.username());
+            txtUsername.setDisable(true);
+            txtEmail.setText(staffToEdit.email());
+            txtPhone.setText(staffToEdit.phone());
+            if (staffToEdit.dob() != null && !staffToEdit.dob().isEmpty()) {
+                dpDob.setValue(LocalDate.parse(staffToEdit.dob()));
+            }
+        }
+        
         layout.getChildren().addAll(txtName, txtUsername, txtEmail, txtPhone, dpDob);
         dialog.getDialogPane().setContent(layout);
         
         Node saveBtn = dialog.getDialogPane().lookupButton(btnSaveType);
-        saveBtn.setDisable(true);
+        if (staffToEdit == null) saveBtn.setDisable(true);
         
         Runnable validate = () -> {
             saveBtn.setDisable(txtName.getText().trim().isEmpty() || txtUsername.getText().trim().isEmpty());
@@ -224,12 +264,22 @@ public class StaffView {
         dialog.setResultConverter(btn -> {
             if (btn == btnSaveType) {
                 String dobStr = dpDob.getValue() != null ? dpDob.getValue().toString() : null;
-                String tempPass = dao.insertUser(txtName.getText(), txtUsername.getText(), txtEmail.getText(), txtPhone.getText(), dobStr, "LIBRARIAN");
-                if (tempPass != null) {
-                    showCredentialsAlert(txtUsername.getText(), tempPass);
-                    refreshData();
+                if (staffToEdit == null) {
+                    String tempPass = dao.insertUser(txtName.getText(), txtUsername.getText(), txtEmail.getText(), txtPhone.getText(), dobStr, "LIBRARIAN");
+                    if (tempPass != null) {
+                        showCredentialsAlert(txtUsername.getText(), tempPass);
+                        refreshData();
+                    } else {
+                        com.lms.util.ToastUtil.show("Failed to create user. Username may already exist.");
+                    }
                 } else {
-                    com.lms.util.ToastUtil.show("Failed to create user. Username may already exist.");
+                    boolean success = dao.updateUser(staffToEdit.id(), txtName.getText(), txtEmail.getText(), txtPhone.getText(), dobStr);
+                    if (success) {
+                        com.lms.util.ToastUtil.show("Staff user updated successfully!");
+                        refreshData();
+                    } else {
+                        com.lms.util.ToastUtil.show("Failed to update user.");
+                    }
                 }
             }
             return null;

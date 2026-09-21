@@ -129,7 +129,11 @@ public class BookDAO {
             ps.setInt(6, copies); // initial available == total
             if (publishedYear != null) ps.setInt(7, publishedYear); else ps.setNull(7, java.sql.Types.INTEGER);
             ps.setString(8, description != null && !description.isBlank() ? description.trim() : null);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ADD_BOOK", "Added book: " + title.trim());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -151,7 +155,11 @@ public class BookDAO {
             if (publishedYear != null) ps.setInt(8, publishedYear); else ps.setNull(8, java.sql.Types.INTEGER);
             ps.setString(9, description != null && !description.isBlank() ? description.trim() : null);
             ps.setInt(10, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_BOOK", "Updated book: " + title.trim());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -164,7 +172,11 @@ public class BookDAO {
         String sql = "DELETE FROM books WHERE id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("DELETE_BOOK", "Deleted book ID: " + id);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

@@ -100,7 +100,11 @@ public class AttendanceDAO {
         String sql = "INSERT INTO attendance (member_id, date, check_in) VALUES (?, date('now', 'localtime'), datetime('now', 'localtime'))";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, memberId);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ATTENDANCE_CHECK_IN", "Member ID checked in: " + memberId);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -111,7 +115,11 @@ public class AttendanceDAO {
         String sql = "UPDATE attendance SET check_out = datetime('now', 'localtime') WHERE id = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, attendanceId);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ATTENDANCE_CHECK_OUT", "Checked out record ID: " + attendanceId);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

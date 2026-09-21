@@ -113,12 +113,32 @@ public class UserDAO {
             ps.setString(7, tempPinHash);
             ps.setString(8, role);
             if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ADD_STAFF", "Added staff user: " + username);
                 return tempPassword;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public boolean updateUser(int id, String fullName, String email, String phone, String dob) {
+        String sql = "UPDATE users SET full_name = ?, email = ?, phone = ?, dob = ? WHERE id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, fullName.trim());
+            ps.setString(2, email != null && !email.isBlank() ? email.trim() : null);
+            ps.setString(3, phone != null && !phone.isBlank() ? phone.trim() : null);
+            ps.setString(4, dob != null && !dob.isBlank() ? dob : null);
+            ps.setInt(5, id);
+            
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_STAFF", "Updated staff user: " + fullName.trim());
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public String resetPassword(int id) {
@@ -130,6 +150,7 @@ public class UserDAO {
             ps.setString(1, passHash);
             ps.setInt(2, id);
             if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("RESET_PASSWORD", "Reset password for staff ID: " + id);
                 return tempPassword;
             }
         } catch (SQLException e) {
@@ -143,7 +164,11 @@ public class UserDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, isActive ? 1 : 0);
             ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_STAFF_STATUS", "Set staff ID " + id + " active status to " + isActive);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

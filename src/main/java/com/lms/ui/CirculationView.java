@@ -169,7 +169,11 @@ public class CirculationView {
                             box.setAlignment(Pos.CENTER);
                             setGraphic(box);
                         } else {
-                            setGraphic(null);
+                            Button btnView = new Button("View");
+                            btnView.setOnAction(e -> showDetailsDialog(rec));
+                            HBox box = new HBox(btnView);
+                            box.setAlignment(Pos.CENTER);
+                            setGraphic(box);
                         }
                     }
                 }
@@ -323,5 +327,58 @@ public class CirculationView {
                 com.lms.util.ToastUtil.show("Failed to issue book. Check availability.");
             }
         });
+    }
+    private void showDetailsDialog(CirculationDAO.CirculationRecord rec) {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("Circulation Details");
+        dialog.setHeaderText(null);
+        if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
+            dialog.initOwner(txtSearch.getScene().getWindow());
+        }
+        
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        
+        GridPane grid = new GridPane();
+        grid.setHgap(16);
+        grid.setVgap(12);
+        grid.setPadding(new Insets(24));
+        
+        addDetailRow(grid, 0, "Book Title:", rec.bookTitle());
+        addDetailRow(grid, 1, "Member Name:", rec.memberName());
+        addDetailRow(grid, 2, "Date Borrowed:", formatDate(rec.borrowedAt()));
+        addDetailRow(grid, 3, "Due Date:", rec.dueDate());
+        
+        String returnedDateStr = formatDate(rec.returnedAt());
+        addDetailRow(grid, 4, "Date Returned:", returnedDateStr);
+        
+        String returnStatus = "Unknown";
+        try {
+            LocalDate dueDate = LocalDate.parse(rec.dueDate());
+            LocalDate returnedDate = LocalDate.parse(returnedDateStr);
+            if (returnedDate.isAfter(dueDate)) {
+                returnStatus = "Late Return";
+            } else {
+                returnStatus = "Returned On Time";
+            }
+        } catch (Exception e) {}
+        
+        Label lblStatusVal = new Label(returnStatus);
+        lblStatusVal.setStyle(returnStatus.equals("Late Return") ? "-fx-text-fill: #ef4444; -fx-font-weight: bold;" : "-fx-text-fill: #22c55e; -fx-font-weight: bold;");
+        Label lblStatus = new Label("Return Status:");
+        lblStatus.setStyle("-fx-font-weight: bold; -fx-text-fill: #52525b;");
+        grid.add(lblStatus, 0, 5);
+        grid.add(lblStatusVal, 1, 5);
+        
+        dialog.getDialogPane().setContent(grid);
+        dialog.showAndWait();
+    }
+
+    private void addDetailRow(GridPane grid, int row, String label, String value) {
+        Label lbl = new Label(label);
+        lbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #52525b;");
+        Label val = new Label(value != null ? value : "N/A");
+        val.setStyle("-fx-text-fill: #18181b;");
+        grid.add(lbl, 0, row);
+        grid.add(val, 1, row);
     }
 }

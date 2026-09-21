@@ -110,6 +110,8 @@ public class MainDashboardView {
         HBox.setHgrow(btnLogout, javafx.scene.layout.Priority.ALWAYS);
         
         btnLogout.setOnAction(e -> {
+            com.lms.db.ActivityLogDAO.log("LOGOUT", "User logged out");
+            com.lms.auth.SessionManager.clearSession();
             AuthService authService = new AuthService();
             com.lms.auth.LoginView loginView = new com.lms.auth.LoginView(authService);
             Navigator.show(loginView.build(), "Login");
@@ -139,8 +141,14 @@ public class MainDashboardView {
             Button finalBtnStaff = btnStaff; // effectively final for lambda
             btnStaff.setOnAction(e -> routeTo(finalBtnStaff, contentPane, new StaffView().build()));
         }
-        btnActivityLogs.setOnAction(e -> routeTo(btnActivityLogs, contentPane, new Label("Activity Logs Module (Coming Soon)")));
-        btnReports.setOnAction(e -> routeTo(btnReports, contentPane, new Label("Reports Module (Coming Soon)")));
+        btnActivityLogs.setOnAction(e -> {
+            com.lms.ui.ActivityLogView view = new com.lms.ui.ActivityLogView();
+            routeTo(btnActivityLogs, contentPane, view.build());
+        });
+        btnReports.setOnAction(e -> {
+            com.lms.ui.ReportsView view = new com.lms.ui.ReportsView();
+            routeTo(btnReports, contentPane, view.build());
+        });
         btnSettings.setOnAction(e -> routeTo(btnSettings, contentPane, new Label("Settings Module (Coming Soon)")));
 
         // Removed redundant block

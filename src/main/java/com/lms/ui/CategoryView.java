@@ -97,15 +97,15 @@ public class CategoryView {
             
             TableColumn<CategoryDAO.Category, String> colName = new TableColumn<>("Name");
             colName.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().name()));
+            colName.setPrefWidth(200);
             
             TableColumn<CategoryDAO.Category, String> colDesc = new TableColumn<>("Description");
             colDesc.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().description()));
+            colDesc.setPrefWidth(200);
             
             // Status Column with Dot Indicator
             TableColumn<CategoryDAO.Category, Void> colStatus = new TableColumn<>("Status");
-            colStatus.setPrefWidth(120);
-            colStatus.setMaxWidth(120);
-            colStatus.setMinWidth(120);
+            colStatus.setPrefWidth(200);
             colStatus.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(Void item, boolean empty) {
@@ -131,9 +131,7 @@ public class CategoryView {
             
             // Actions Column
             TableColumn<CategoryDAO.Category, Void> colActions = new TableColumn<>("Actions");
-            colActions.setPrefWidth(140);
-            colActions.setMaxWidth(140);
-            colActions.setMinWidth(140);
+            colActions.setPrefWidth(200);
             colActions.setCellFactory(column -> new TableCell<>() {
                 @Override
                 protected void updateItem(Void item, boolean empty) {

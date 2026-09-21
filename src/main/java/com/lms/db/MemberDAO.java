@@ -109,7 +109,11 @@ public class MemberDAO {
             ps.setString(5, address != null && !address.isBlank() ? address.trim() : null);
             ps.setInt(6, isActive ? 1 : 0);
             ps.setString(7, dob != null && !dob.isBlank() ? dob : null);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("ADD_MEMBER", "Added member: " + fullName);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -126,7 +130,11 @@ public class MemberDAO {
             ps.setInt(5, isActive ? 1 : 0);
             ps.setString(6, dob != null && !dob.isBlank() ? dob : null);
             ps.setInt(7, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_MEMBER", "Updated member: " + fullName.trim());
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -138,7 +146,11 @@ public class MemberDAO {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, isActive ? 1 : 0);
             ps.setInt(2, id);
-            return ps.executeUpdate() > 0;
+            if (ps.executeUpdate() > 0) {
+                ActivityLogDAO.log("UPDATE_MEMBER_STATUS", "Set member ID " + id + " active status to " + isActive);
+                return true;
+            }
+            return false;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
