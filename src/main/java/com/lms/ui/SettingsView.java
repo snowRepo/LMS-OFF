@@ -427,7 +427,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                 if (isBoth) {
                     try {
                         DatabaseManager.getInstance().wipeEverything();
-                        performLogout("Total wipe complete. System reset.");
+                        performFactoryReset("Factory reset complete.");
                     } catch (SQLException ex) {
                         ToastUtil.show("Failed to wipe local data: " + ex.getMessage());
                     }
@@ -448,6 +448,14 @@ alert.initOwner(com.lms.util.Navigator.getStage());
     private void performLogout(String message) {
         SessionManager.clearSession();
         Navigator.show(new LoginView(authService).build(), "Login");
+        ToastUtil.show(message);
+    }
+
+    private void performFactoryReset(String message) {
+        SessionManager.clearSession();
+        // Since EULA is already agreed to from the initial install, we skip WelcomeView 
+        // and drop the user straight into Database Setup.
+        Navigator.show(new com.lms.auth.setup.DbSetupView(authService).build(), "Database Setup");
         ToastUtil.show(message);
     }
 

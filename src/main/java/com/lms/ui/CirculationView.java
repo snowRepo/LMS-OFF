@@ -17,7 +17,7 @@ import java.util.List;
 public class CirculationView {
 
     private final CirculationDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private ComboBox<String> cbStatus;
@@ -215,103 +215,150 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
         layout.setPrefWidth(400);
+        layout.setMinHeight(230);
         
         // --- Book Search ---
-        Label lblBook = new Label("Select Book:");
-        lblBook.setStyle("-fx-font-weight: bold;");
         TextField txtBookSearch = new TextField();
         txtBookSearch.setPromptText("Search Book Title...");
-        ListView<BookDAO.Book> lvBooks = new ListView<>();
-        lvBooks.setPrefHeight(90);
+        VBox lvBooks = new VBox();
+        lvBooks.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
+        lvBooks.setVisible(false);
+        lvBooks.setManaged(false);
         
-        BookDAO bookDao = new BookDAO();
-        txtBookSearch.textProperty().addListener((obs, old, val) -> {
-            if (val != null && val.trim().length() > 0) {
-                // Fetch up to 10 books (ignoring category filter)
-                List<BookDAO.Book> results = bookDao.getBooks(val, null, 0, 10);
-                lvBooks.getItems().setAll(results);
-            } else {
-                lvBooks.getItems().clear();
-            }
-        });
-        
-        lvBooks.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(BookDAO.Book item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.title() + " - " + item.availableCopies() + " available");
-                    setDisable(item.availableCopies() <= 0); // disable row if none available
-                }
-            }
-        });
-
-        // --- Member Search ---
-        Label lblMember = new Label("Select Member:");
-        lblMember.setStyle("-fx-font-weight: bold;");
-        TextField txtMemberSearch = new TextField();
-        txtMemberSearch.setPromptText("Search Member Name...");
-        ListView<MemberDAO.Member> lvMembers = new ListView<>();
-        lvMembers.setPrefHeight(90);
-        
-        MemberDAO memberDao = new MemberDAO();
-        txtMemberSearch.textProperty().addListener((obs, old, val) -> {
-            if (val != null && val.trim().length() > 0) {
-                List<MemberDAO.Member> results = memberDao.getMembers(val, 1, 0, 10);
-                lvMembers.getItems().setAll(results);
-            } else {
-                lvMembers.getItems().clear();
-            }
-        });
-        
-        lvMembers.setCellFactory(lv -> new ListCell<>() {
-            @Override
-            protected void updateItem(MemberDAO.Member item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    String ageStr = "Unknown Age";
-                    if (item.dob() != null && !item.dob().isBlank()) {
-                        try {
-                            LocalDate dob = LocalDate.parse(item.dob());
-                            int age = java.time.Period.between(dob, LocalDate.now()).getYears();
-                            ageStr = age + " yrs";
-                        } catch (Exception e) {}
-                    }
-                    setText(item.fullName() + " - " + ageStr);
-                }
-            }
-        });
-
-        // --- Due Date ---
-        Label lblDue = new Label("Due Date:");
-        lblDue.setStyle("-fx-font-weight: bold;");
-        DatePicker dpDue = new DatePicker(LocalDate.now().plusDays(14));
-        dpDue.setMaxWidth(Double.MAX_VALUE);
-        
-        layout.getChildren().addAll(lblBook, txtBookSearch, lvBooks, lblMember, txtMemberSearch, lvMembers, lblDue, dpDue);
-        dialog.getDialogPane().setContent(layout);
+        BookDAO.Book[] finalSelectedBook = new BookDAO.Book[1];
+        MemberDAO.Member[] finalSelectedMember = new MemberDAO.Member[1];
         
         Node issueBtn = dialog.getDialogPane().lookupButton(btnIssueType);
         issueBtn.setDisable(true);
-        
-        // Validation logic
         Runnable validate = () -> {
-            BookDAO.Book selectedBook = lvBooks.getSelectionModel().getSelectedItem();
-            MemberDAO.Member selectedMember = lvMembers.getSelectionModel().getSelectedItem();
+            BookDAO.Book selectedBook = finalSelectedBook[0];
+            MemberDAO.Member selectedMember = finalSelectedMember[0];
             boolean valid = selectedBook != null && selectedBook.availableCopies() > 0 && selectedMember != null;
             issueBtn.setDisable(!valid);
         };
-        lvBooks.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> validate.run());
-        lvMembers.getSelectionModel().selectedItemProperty().addListener((obs, old, val) -> validate.run());
+        
+        boolean[] ignoreBookSearch = new boolean[]{false};
+        boolean[] ignoreMemberSearch = new boolean[]{false};
+        
+        BookDAO bookDao = new BookDAO();
+        txtBookSearch.textProperty().addListener((obs, old, val) -> {
+            if (ignoreBookSearch[0]) return;
+            finalSelectedBook[0] = null;
+            if (val != null && val.trim().length() > 0) {
+                // Fetch up to 1 book to prevent pushing buttons off screen
+                List<BookDAO.Book> results = bookDao.getBooks(val, null, 0, 1);
+                
+                if (results.isEmpty() || (results.size() == 1 && results.get(0).title().equalsIgnoreCase(val.trim()))) {
+                    lvBooks.getChildren().clear();
+                    lvBooks.setVisible(false);
+                    lvBooks.setManaged(false);
+                } else {
+                    lvBooks.getChildren().clear();
+                    for (BookDAO.Book item : results) {
+                        javafx.scene.control.Label lbl = new javafx.scene.control.Label(item.title() + " - " + item.availableCopies() + " available");
+                        lbl.setMaxWidth(Double.MAX_VALUE);
+                        lbl.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
+                        if (item.availableCopies() <= 0) {
+                            lbl.setDisable(true);
+                        } else {
+                            lbl.setOnMouseEntered(e -> lbl.setStyle("-fx-background-color: -fx-accent; -fx-text-fill: white;"));
+                            lbl.setOnMouseExited(e -> lbl.setStyle("-fx-background-color: transparent; -fx-text-fill: -fx-text-base-color;"));
+                            lbl.setOnMouseClicked(e -> {
+                                finalSelectedBook[0] = item;
+                                ignoreBookSearch[0] = true;
+                                txtBookSearch.setText(item.title());
+                                ignoreBookSearch[0] = false;
+                                lvBooks.setVisible(false);
+                                lvBooks.setManaged(false);
+                                validate.run();
+                            });
+                        }
+                        lvBooks.getChildren().add(lbl);
+                    }
+                    lvBooks.setVisible(true);
+                    lvBooks.setManaged(true);
+                }
+            } else {
+                lvBooks.getChildren().clear();
+                lvBooks.setVisible(false);
+                lvBooks.setManaged(false);
+            }
+        });
+        
+        // ListCell factory removed since we use Labels now
+
+        // --- Member Search ---
+        TextField txtMemberSearch = new TextField();
+        txtMemberSearch.setPromptText("Search Member Name...");
+        VBox lvMembers = new VBox();
+        lvMembers.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
+        lvMembers.setVisible(false);
+        lvMembers.setManaged(false);
+        
+        MemberDAO memberDao = new MemberDAO();
+        txtMemberSearch.textProperty().addListener((obs, old, val) -> {
+            if (ignoreMemberSearch[0]) return;
+            finalSelectedMember[0] = null;
+            if (val != null && val.trim().length() > 0) {
+                List<MemberDAO.Member> results = memberDao.getMembers(val, 1, 0, 1);
+                
+                if (results.isEmpty() || (results.size() == 1 && results.get(0).fullName().equalsIgnoreCase(val.trim()))) {
+                    lvMembers.getChildren().clear();
+                    lvMembers.setVisible(false);
+                    lvMembers.setManaged(false);
+                } else {
+                    lvMembers.getChildren().clear();
+                    for (MemberDAO.Member item : results) {
+                        String ageStr = "Unknown Age";
+                        if (item.dob() != null && !item.dob().isBlank()) {
+                            try {
+                                LocalDate dob = LocalDate.parse(item.dob());
+                                int age = java.time.Period.between(dob, LocalDate.now()).getYears();
+                                ageStr = age + " yrs";
+                            } catch (Exception ignored) {}
+                        }
+                        javafx.scene.control.Label lbl = new javafx.scene.control.Label(item.fullName() + " - " + ageStr);
+                        lbl.setMaxWidth(Double.MAX_VALUE);
+                        lbl.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
+                        lbl.setOnMouseEntered(e -> lbl.setStyle("-fx-background-color: -fx-accent; -fx-text-fill: white;"));
+                        lbl.setOnMouseExited(e -> lbl.setStyle("-fx-background-color: transparent; -fx-text-fill: -fx-text-base-color;"));
+                        lbl.setOnMouseClicked(e -> {
+                            finalSelectedMember[0] = item;
+                            ignoreMemberSearch[0] = true;
+                            txtMemberSearch.setText(item.fullName());
+                            ignoreMemberSearch[0] = false;
+                            lvMembers.setVisible(false);
+                            lvMembers.setManaged(false);
+                            validate.run();
+                        });
+                        lvMembers.getChildren().add(lbl);
+                    }
+                    lvMembers.setVisible(true);
+                    lvMembers.setManaged(true);
+                }
+            } else {
+                lvMembers.getChildren().clear();
+                lvMembers.setVisible(false);
+                lvMembers.setManaged(false);
+            }
+        });
+        
+        // ListCell factory removed since we use Labels now
+
+        // --- Due Date ---
+        DatePicker dpDue = new DatePicker(LocalDate.now().plusDays(14));
+        dpDue.setMaxWidth(Double.MAX_VALUE);
+        
+        layout.getChildren().addAll(txtBookSearch, lvBooks, txtMemberSearch, lvMembers, dpDue);
+        dialog.getDialogPane().setContent(layout);
+        
+        txtBookSearch.textProperty().addListener((obs, old, val) -> validate.run());
+        txtMemberSearch.textProperty().addListener((obs, old, val) -> validate.run());
         
         dialog.setResultConverter(btn -> {
             if (btn == btnIssueType) {
-                BookDAO.Book b = lvBooks.getSelectionModel().getSelectedItem();
-                MemberDAO.Member m = lvMembers.getSelectionModel().getSelectedItem();
+                BookDAO.Book b = finalSelectedBook[0];
+                MemberDAO.Member m = finalSelectedMember[0];
                 LocalDate date = dpDue.getValue();
                 if (b != null && m != null && date != null) {
                     return dao.issueBook(b.id(), m.id(), date);

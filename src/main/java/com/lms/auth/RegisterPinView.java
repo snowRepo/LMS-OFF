@@ -200,12 +200,9 @@ public class RegisterPinView {
         boolean success = authService.register(fullName, username, password, pin, "ADMIN");
 
         if (success) {
-            com.lms.util.ToastUtil.show("Administrator account created successfully!");
-            // Switch to Dashboard automatically
-            authService.login(username, password).ifPresent(user -> {
-                com.lms.ui.MainDashboardView dashboard = new com.lms.ui.MainDashboardView(user);
-                Navigator.show(dashboard.build(), "Dashboard");
-            });
+            com.lms.util.ToastUtil.show("Administrator account created successfully! Please log in.");
+            LoginView loginView = new LoginView(authService);
+            Navigator.show(loginView.build(), "Login");
         } else {
             showError("Failed to register. Username might already exist.");
             btnNext.setDisable(false);

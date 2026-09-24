@@ -61,11 +61,13 @@ public class MainDashboardView {
         Button btnCirculation = createNavButton("🎫 Circulation");
         
         Button btnStaff = null;
+        Button btnActivityLogs = null;
+        Button btnReports = null;
         if ("ADMIN".equals(currentUser.role())) {
             btnStaff = createNavButton("👤 Staff");
+            btnActivityLogs = createNavButton("📋 Activity Logs");
+            btnReports = createNavButton("📈 Reports");
         }
-        Button btnActivityLogs = createNavButton("📋 Activity Logs");
-        Button btnReports = createNavButton("📈 Reports");
         
         Region spacer = new Region();
         VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
@@ -80,7 +82,14 @@ public class MainDashboardView {
             navBox.getChildren().add(btnStaff);
         }
         
-        navBox.getChildren().addAll(btnActivityLogs, btnReports, spacer, btnSettings);
+        if (btnActivityLogs != null) {
+            navBox.getChildren().add(btnActivityLogs);
+        }
+        if (btnReports != null) {
+            navBox.getChildren().add(btnReports);
+        }
+        
+        navBox.getChildren().addAll(spacer, btnSettings);
 
         javafx.scene.control.Separator sep2 = new javafx.scene.control.Separator();
         sep2.setStyle("-fx-opacity: 0.2;");
@@ -162,14 +171,20 @@ public class MainDashboardView {
             Button finalBtnStaff = btnStaff; // effectively final for lambda
             btnStaff.setOnAction(e -> routeTo(finalBtnStaff, contentPane, new StaffView().build()));
         }
-        btnActivityLogs.setOnAction(e -> {
-            com.lms.ui.ActivityLogView view = new com.lms.ui.ActivityLogView();
-            routeTo(btnActivityLogs, contentPane, view.build());
-        });
-        btnReports.setOnAction(e -> {
-            com.lms.ui.ReportsView view = new com.lms.ui.ReportsView();
-            routeTo(btnReports, contentPane, view.build());
-        });
+        if (btnActivityLogs != null) {
+            Button finalBtnLogs = btnActivityLogs;
+            btnActivityLogs.setOnAction(e -> {
+                com.lms.ui.ActivityLogView view = new com.lms.ui.ActivityLogView();
+                routeTo(finalBtnLogs, contentPane, view.build());
+            });
+        }
+        if (btnReports != null) {
+            Button finalBtnReports = btnReports;
+            btnReports.setOnAction(e -> {
+                com.lms.ui.ReportsView view = new com.lms.ui.ReportsView();
+                routeTo(finalBtnReports, contentPane, view.build());
+            });
+        }
         btnSettings.setOnAction(e -> routeTo(btnSettings, contentPane, new SettingsView().build()));
 
         // Removed redundant block

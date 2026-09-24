@@ -9,7 +9,6 @@ com/lms/db/MemberDAO.class
 com/lms/util/Navigator.class
 com/lms/auth/setup/WelcomeView.class
 com/lms/auth/RegisterView.class
-com/lms/ui/CirculationView$4.class
 com/lms/util/ToastUtil.class
 com/lms/auth/LoginView.class
 com/lms/ui/CatalogView$1.class
@@ -39,7 +38,6 @@ com/lms/util/ReportExporter.class
 com/lms/model/User.class
 com/lms/db/MemberDAO$Member.class
 com/lms/ui/ActivityLogView.class
-com/lms/ui/CirculationView$3.class
 com/lms/ui/SettingsView.class
 com/lms/ui/StaffView$2.class
 com/lms/db/CirculationDAO.class

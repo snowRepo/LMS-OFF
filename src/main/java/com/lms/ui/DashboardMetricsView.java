@@ -15,7 +15,7 @@ import java.util.List;
 public class DashboardMetricsView {
 
     private final DashboardDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
 
     public DashboardMetricsView() {
         this.dao = new DashboardDAO();

@@ -15,7 +15,7 @@ import java.util.List;
 public class MemberView {
 
     private final MemberDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private ComboBox<String> cbStatusFilter;

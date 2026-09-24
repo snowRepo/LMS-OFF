@@ -16,7 +16,7 @@ import java.util.List;
 public class AttendanceView {
 
     private final AttendanceDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private DatePicker dpDate;

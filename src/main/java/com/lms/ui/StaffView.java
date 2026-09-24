@@ -16,7 +16,7 @@ import java.util.Optional;
 public class StaffView {
 
     private final UserDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private ComboBox<String> cbStatus;
@@ -181,7 +181,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                             if (result.isPresent() && result.get() == ButtonType.OK) {
                                 String tempPass = dao.resetPassword(staff.id());
                                 if (tempPass != null) {
-                                    showCredentialsAlert(staff.username(), tempPass);
+                                    javafx.application.Platform.runLater(() -> showCredentialsAlert(staff.username(), tempPass));
                                 }
                             }
                         });
@@ -270,8 +270,11 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
                 if (staffToEdit == null) {
                     String tempPass = dao.insertUser(txtName.getText(), txtUsername.getText(), txtEmail.getText(), txtPhone.getText(), dobStr, "LIBRARIAN");
                     if (tempPass != null) {
-                        showCredentialsAlert(txtUsername.getText(), tempPass);
-                        refreshData();
+                        String finalUsername = txtUsername.getText();
+                        javafx.application.Platform.runLater(() -> {
+                            showCredentialsAlert(finalUsername, tempPass);
+                            refreshData();
+                        });
                     } else {
                         com.lms.util.ToastUtil.show("Failed to create user. Username may already exist.");
                     }
@@ -293,20 +296,50 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
     
     private void showCredentialsAlert(String username, String tempPass) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-alert.initOwner(com.lms.util.Navigator.getStage());
+        alert.initOwner(com.lms.util.Navigator.getStage());
         alert.setTitle("Account Credentials");
-        alert.setHeaderText("Please copy and provide these credentials to the staff member.");
+        alert.setHeaderText(null);
         
         if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
             alert.initOwner(txtSearch.getScene().getWindow());
         }
         
-        TextArea area = new TextArea("Username: " + username + "\nTemporary Password: " + tempPass);
-        area.setEditable(false);
-        area.setWrapText(true);
-        area.setPrefRowCount(3);
+        VBox content = new VBox(10);
+        content.setPrefWidth(200);
         
-        alert.getDialogPane().setContent(area);
+        Label lblHeader = new Label("Please copy and provide these credentials to the staff member.");
+        lblHeader.setWrapText(true);
+        
+        javafx.scene.text.TextFlow flowUser = new javafx.scene.text.TextFlow();
+        javafx.scene.text.Text tUserLabel = new javafx.scene.text.Text("username: ");
+        tUserLabel.setStyle("-fx-font-weight: normal;");
+        javafx.scene.text.Text tUserVal = new javafx.scene.text.Text(username);
+        tUserVal.setStyle("-fx-font-weight: bold;");
+        flowUser.getChildren().addAll(tUserLabel, tUserVal);
+        
+        javafx.scene.text.TextFlow flowPass = new javafx.scene.text.TextFlow();
+        javafx.scene.text.Text tPassLabel = new javafx.scene.text.Text("password: ");
+        tPassLabel.setStyle("-fx-font-weight: normal;");
+        javafx.scene.text.Text tPassVal = new javafx.scene.text.Text(tempPass);
+        tPassVal.setStyle("-fx-font-weight: bold;");
+        flowPass.getChildren().addAll(tPassLabel, tPassVal);
+        
+        Label lblInfo = new Label("Staff will be required to change their password on first login.");
+        lblInfo.setWrapText(true);
+        lblInfo.setStyle("-fx-text-fill: #6b7280; -fx-font-size: 11px; -fx-font-style: italic;");
+        
+        Button btnCopy = new Button("Copy Credentials");
+        btnCopy.setOnAction(e -> {
+            javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
+            cc.putString("Username: " + username + "\nPassword: " + tempPass);
+            clipboard.setContent(cc);
+            btnCopy.setText("Copied!");
+        });
+        
+        content.getChildren().addAll(lblHeader, flowUser, flowPass, btnCopy, lblInfo);
+        
+        alert.getDialogPane().setContent(content);
         alert.showAndWait();
     }
 }

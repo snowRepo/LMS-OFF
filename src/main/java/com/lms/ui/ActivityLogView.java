@@ -13,7 +13,7 @@ import java.util.List;
 public class ActivityLogView {
 
     private final ActivityLogDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private DatePicker dpFromDate;

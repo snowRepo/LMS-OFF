@@ -15,7 +15,7 @@ import java.util.List;
 public class CategoryView {
 
     private final CategoryDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
     private ComboBox<String> cbStatusFilter;

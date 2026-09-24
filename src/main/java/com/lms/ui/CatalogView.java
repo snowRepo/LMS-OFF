@@ -15,10 +15,11 @@ import java.util.List;
 public class CatalogView {
 
     private final BookDAO dao;
-    private static final int ITEMS_PER_PAGE = 15;
+    private static final int ITEMS_PER_PAGE = 20;
     
     private TextField txtSearch;
-    private ComboBox<BookDAO.Category> cbCategory;
+    private Button btnCategoryFilter;
+    private BookDAO.Category currentCategoryFilter = new BookDAO.Category(-1, "All Categories");
     private Pagination pagination;
     private TableView<BookDAO.Book> table;
 
@@ -44,14 +45,8 @@ public class CatalogView {
         txtSearch.setPrefWidth(250);
         txtSearch.textProperty().addListener((obs, oldVal, newVal) -> refreshData());
 
-        cbCategory = new ComboBox<>();
-        cbCategory.setPromptText("All Categories");
-        
-        // Load categories and add a dummy "All Categories" option
-        cbCategory.getItems().add(new BookDAO.Category(-1, "All Categories"));
-        cbCategory.getItems().addAll(dao.getCategories());
-        cbCategory.getSelectionModel().selectFirst();
-        cbCategory.setOnAction(e -> refreshData());
+        btnCategoryFilter = new Button("All Categories");
+        btnCategoryFilter.setOnAction(e -> showCategoryFilterDialog());
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -59,7 +54,7 @@ public class CatalogView {
         Button btnAdd = new Button("+ Add Book");
         btnAdd.setOnAction(e -> showBookDialog(null));
 
-        topControls.getChildren().addAll(txtSearch, cbCategory, spacer, btnAdd);
+        topControls.getChildren().addAll(txtSearch, btnCategoryFilter, spacer, btnAdd);
 
         // Pagination and Table setup
         pagination = new Pagination();
@@ -74,7 +69,7 @@ public class CatalogView {
 
     private void refreshData() {
         String search = txtSearch.getText();
-        BookDAO.Category cat = cbCategory.getSelectionModel().getSelectedItem();
+        BookDAO.Category cat = currentCategoryFilter;
         Integer catId = (cat != null && cat.id() != -1) ? cat.id() : null;
 
         int totalItems = dao.getBooksCount(search, catId);
@@ -166,7 +161,7 @@ confirm.initOwner(com.lms.util.Navigator.getStage());
 
     private void loadTableData(int pageIndex) {
         String search = txtSearch.getText();
-        BookDAO.Category cat = cbCategory.getSelectionModel().getSelectedItem();
+        BookDAO.Category cat = currentCategoryFilter;
         Integer catId = (cat != null && cat.id() != -1) ? cat.id() : null;
 
         List<BookDAO.Book> data = dao.getBooks(search, catId, pageIndex * ITEMS_PER_PAGE, ITEMS_PER_PAGE);
@@ -200,10 +195,53 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         TextField txtIsbn = new TextField();
         txtIsbn.setPromptText("ISBN");
         
-        ComboBox<BookDAO.Category> cbCat = new ComboBox<>();
-        cbCat.setPromptText("Category");
-        cbCat.getItems().addAll(dao.getCategories());
-        cbCat.setMaxWidth(Double.MAX_VALUE);
+        TextField txtCatSearch = new TextField();
+        txtCatSearch.setPromptText("Search Category...");
+        VBox lvCat = new VBox();
+        lvCat.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
+        lvCat.setVisible(false);
+        lvCat.setManaged(false);
+        
+        java.util.List<BookDAO.Category> allCats = dao.getCategories();
+        
+        txtCatSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal == null || newVal.trim().isEmpty()) {
+                lvCat.setVisible(false);
+                lvCat.setManaged(false);
+            } else {
+                java.util.List<BookDAO.Category> filtered = allCats.stream()
+                    .filter(c -> c.name().toLowerCase().contains(newVal.trim().toLowerCase()))
+                    .limit(1)
+                    .toList();
+                
+                if (filtered.isEmpty()) {
+                    lvCat.setVisible(false);
+                    lvCat.setManaged(false);
+                } else {
+                    if (filtered.size() == 1 && filtered.get(0).name().equalsIgnoreCase(newVal.trim())) {
+                        lvCat.setVisible(false);
+                        lvCat.setManaged(false);
+                    } else {
+                        lvCat.getChildren().clear();
+                        for (BookDAO.Category c : filtered) {
+                            javafx.scene.control.Label lbl = new javafx.scene.control.Label(c.name());
+                            lbl.setMaxWidth(Double.MAX_VALUE);
+                            lbl.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
+                            lbl.setOnMouseEntered(e -> lbl.setStyle("-fx-background-color: -fx-accent; -fx-text-fill: white;"));
+                            lbl.setOnMouseExited(e -> lbl.setStyle("-fx-background-color: transparent; -fx-text-fill: -fx-text-base-color;"));
+                            lbl.setOnMouseClicked(e -> {
+                                txtCatSearch.setText(c.name());
+                                lvCat.setVisible(false);
+                                lvCat.setManaged(false);
+                            });
+                            lvCat.getChildren().add(lbl);
+                        }
+                        lvCat.setVisible(true);
+                        lvCat.setManaged(true);
+                    }
+                }
+            }
+        });
         
         TextField txtCopies = new TextField();
         txtCopies.setPromptText("Total Copies * (e.g. 1)");
@@ -225,16 +263,13 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             if (bookToEdit.description() != null) txtDesc.setText(bookToEdit.description());
             
             if (bookToEdit.categoryName() != null) {
-                 cbCat.getItems().stream()
-                     .filter(c -> c.name().equals(bookToEdit.categoryName()))
-                     .findFirst()
-                     .ifPresent(cbCat.getSelectionModel()::select);
+                txtCatSearch.setText(bookToEdit.categoryName());
             }
         }
 
         // Add to VBox directly using placeholders
         layout.getChildren().addAll(
-            txtTitle, txtAuthor, txtIsbn, cbCat, txtCopies, txtYear, txtDesc
+            txtTitle, txtAuthor, txtIsbn, txtCatSearch, lvCat, txtCopies, txtYear, txtDesc
         );
 
         dialog.getDialogPane().setContent(layout);
@@ -254,7 +289,14 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
                     year = Integer.parseInt(txtYear.getText().trim());
                 } catch (NumberFormatException ignored) {}
 
-                Integer catId = cbCat.getValue() != null ? cbCat.getValue().id() : null;
+                String catName = txtCatSearch.getText().trim();
+                Integer catId = null;
+                for (BookDAO.Category c : allCats) {
+                    if (c.name().equalsIgnoreCase(catName)) {
+                        catId = c.id();
+                        break;
+                    }
+                }
 
                 if (bookToEdit == null) {
                     return dao.insertBook(txtTitle.getText(), txtAuthor.getText(), txtIsbn.getText(), catId, copies, year, txtDesc.getText());
@@ -271,6 +313,91 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
                 refreshData();
             } else {
                 com.lms.util.ToastUtil.show("Failed to save book (check required fields).");
+            }
+        });
+    }
+
+    private void showCategoryFilterDialog() {
+        javafx.scene.control.Dialog<BookDAO.Category> dialog = new javafx.scene.control.Dialog<>();
+        dialog.initOwner(com.lms.util.Navigator.getStage());
+        dialog.setTitle("Filter by Category");
+        dialog.setHeaderText(null);
+        
+        TextField txtCatSearch = new TextField();
+        txtCatSearch.setPrefWidth(300);
+        txtCatSearch.setPromptText("Search Category...");
+        VBox lvCat = new VBox();
+        lvCat.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
+        lvCat.setVisible(false);
+        lvCat.setManaged(false);
+        
+        java.util.List<BookDAO.Category> allCats = new java.util.ArrayList<>();
+        allCats.add(new BookDAO.Category(-1, "All Categories"));
+        allCats.addAll(dao.getCategories());
+        
+        txtCatSearch.textProperty().addListener((obs, old, val) -> {
+            if (val == null || val.trim().isEmpty()) {
+                lvCat.setVisible(false);
+                lvCat.setManaged(false);
+            } else {
+                java.util.List<BookDAO.Category> filtered = allCats.stream()
+                    .filter(c -> c.name().toLowerCase().contains(val.trim().toLowerCase()))
+                    .limit(1)
+                    .toList();
+                
+                if (filtered.isEmpty()) {
+                    lvCat.setVisible(false);
+                    lvCat.setManaged(false);
+                } else {
+                    if (filtered.size() == 1 && filtered.get(0).name().equalsIgnoreCase(val.trim())) {
+                        lvCat.setVisible(false);
+                        lvCat.setManaged(false);
+                    } else {
+                        lvCat.getChildren().clear();
+                        for (BookDAO.Category c : filtered) {
+                            javafx.scene.control.Label lbl = new javafx.scene.control.Label(c.name());
+                            lbl.setMaxWidth(Double.MAX_VALUE);
+                            lbl.setPadding(new javafx.geometry.Insets(5, 10, 5, 10));
+                            lbl.setOnMouseEntered(e -> lbl.setStyle("-fx-background-color: -fx-accent; -fx-text-fill: white;"));
+                            lbl.setOnMouseExited(e -> lbl.setStyle("-fx-background-color: transparent; -fx-text-fill: -fx-text-base-color;"));
+                            lbl.setOnMouseClicked(e -> {
+                                txtCatSearch.setText(c.name());
+                                lvCat.setVisible(false);
+                                lvCat.setManaged(false);
+                            });
+                            lvCat.getChildren().add(lbl);
+                        }
+                        lvCat.setVisible(true);
+                        lvCat.setManaged(true);
+                    }
+                }
+            }
+        });
+        
+        VBox layout = new VBox(10, txtCatSearch, lvCat);
+        layout.setPadding(new Insets(10));
+        layout.setPrefWidth(320);
+        layout.setMinHeight(85);
+        dialog.getDialogPane().setContent(layout);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        
+        dialog.setResultConverter(btn -> {
+            if (btn == ButtonType.OK) {
+                String catName = txtCatSearch.getText().trim();
+                for (BookDAO.Category c : allCats) {
+                    if (c.name().equalsIgnoreCase(catName)) {
+                        return c;
+                    }
+                }
+            }
+            return null;
+        });
+        
+        dialog.showAndWait().ifPresent(cat -> {
+            if (cat != null) {
+                this.currentCategoryFilter = cat;
+                btnCategoryFilter.setText(cat.name());
+                refreshData();
             }
         });
     }
