@@ -1,0 +1,54 @@
+name: Build and Release Installers
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: macos-13
+            script: ./build_mac.sh
+            asset_path: target/installer/LMS-1.0.0.dmg
+            asset_name: LMS-macOS.dmg
+          - os: windows-latest
+            script: build_windows.bat
+            asset_path: target/installer/LMS-1.0.0.exe
+            asset_name: LMS-Windows.exe
+          - os: ubuntu-latest
+            script: ./build_linux.sh
+            asset_path: target/installer/lms_1.0.0_amd64.deb
+            asset_name: LMS-Linux.deb
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Make scripts executable (Unix)
+        if: runner.os != 'Windows'
+        run: chmod +x build_mac.sh build_linux.sh
+
+      - name: Build Installer
+        run: ${{ matrix.script }}
+
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.asset_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

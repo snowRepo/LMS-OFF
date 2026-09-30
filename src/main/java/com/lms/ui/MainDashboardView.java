@@ -30,6 +30,49 @@ public class MainDashboardView {
     public Scene build() {
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #f0f0f2;");
+        
+        javafx.scene.layout.StackPane contentPane = new javafx.scene.layout.StackPane();
+        contentPane.setStyle("-fx-background-color: #f0f0f2;");
+        
+        javafx.scene.control.MenuBar menuBar = new javafx.scene.control.MenuBar();
+        menuBar.setUseSystemMenuBar(true);
+        javafx.scene.control.Menu helpMenu = new javafx.scene.control.Menu("Help");
+        javafx.scene.control.MenuItem updateItem = new javafx.scene.control.MenuItem("Check for Updates");
+        updateItem.setOnAction(e -> {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+            alert.setTitle("Software Update");
+            alert.setHeaderText("Checking for updates...");
+            alert.setContentText("Connecting to GitHub...");
+            alert.getDialogPane().lookupButton(javafx.scene.control.ButtonType.OK).setDisable(true);
+            alert.show();
+
+            new Thread(() -> {
+                try {
+                    java.util.Optional<com.lms.util.UpdateManager.ReleaseInfo> opt = com.lms.util.UpdateManager.checkForUpdates();
+                    javafx.application.Platform.runLater(() -> {
+                        alert.close();
+                        if (opt.isPresent()) {
+                            routeTo(null, contentPane, new com.lms.ui.SettingsView().build());
+                            com.lms.util.ToastUtil.show("Update available! Click 'Check for Updates' below to download.");
+                        } else {
+                            javafx.scene.control.Alert a2 = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                            a2.setTitle("Software Update");
+                            a2.setHeaderText("Up to date");
+                            a2.setContentText("You are running the latest version (" + com.lms.util.UpdateManager.CURRENT_VERSION + ").");
+                            a2.show();
+                        }
+                    });
+                } catch (Exception ex) {
+                    javafx.application.Platform.runLater(() -> {
+                        alert.close();
+                        com.lms.util.ToastUtil.show("Update check failed: " + ex.getMessage());
+                    });
+                }
+            }).start();
+        });
+        helpMenu.getItems().add(updateItem);
+        menuBar.getMenus().add(helpMenu);
+        root.setTop(menuBar);
 
         // ── Sidebar (Left) ───────────────────────────────────────────────────
         VBox sidebar = new VBox(16);
@@ -104,8 +147,16 @@ public class MainDashboardView {
         lblRole.setStyle("-fx-text-fill: #039ED3; -fx-font-size: 11px; -fx-font-weight: bold;");
         nameRoleBox.getChildren().addAll(lblUserName, lblRole);
         
-        Label lblSyncStatus = new Label("● Offline");
-        lblSyncStatus.setStyle("-fx-text-fill: #71717a; -fx-font-size: 11px;");
+        Label lblSyncStatus = new Label();
+        lblSyncStatus.textProperty().bind(com.lms.util.GlobalState.syncStatusTextProperty());
+        // Set initial style immediately, and then listen for changes
+        lblSyncStatus.setStyle("-fx-text-fill: " + com.lms.util.GlobalState.syncStatusColorProperty().get() + "; -fx-font-size: 11px;");
+        com.lms.util.GlobalState.syncStatusColorProperty().addListener((obs, oldVal, newVal) -> {
+            lblSyncStatus.setStyle("-fx-text-fill: " + newVal + "; -fx-font-size: 11px;");
+        });
+        
+        // Fetch real status from DB on launch
+        com.lms.util.GlobalState.refreshSyncState();
         
         HBox bottomActions = new HBox(8);
         Button btnSync = new Button("Sync Now");
@@ -116,19 +167,18 @@ public class MainDashboardView {
         btnSync.setOnAction(e -> {
             btnSync.setText("Syncing...");
             btnSync.setDisable(true);
+            com.lms.util.GlobalState.setSyncStatus("● Syncing...", "#039ED3");
             new com.lms.sync.SyncManager().sync(
                 () -> {
                     btnSync.setText("Sync Now");
                     btnSync.setDisable(false);
-                    lblSyncStatus.setText("● Synced " + java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.LocalTime.now()));
-                    lblSyncStatus.setStyle("-fx-text-fill: #22c55e; -fx-font-size: 11px;");
+                    com.lms.util.GlobalState.refreshSyncState();
                     com.lms.util.ToastUtil.show("Cloud sync complete!");
                 },
                 () -> {
                     btnSync.setText("Sync Now");
                     btnSync.setDisable(false);
-                    lblSyncStatus.setText("● Sync Failed");
-                    lblSyncStatus.setStyle("-fx-text-fill: #ef4444; -fx-font-size: 11px;");
+                    com.lms.util.GlobalState.setSyncStatus("● Sync Failed", "#ef4444");
                     com.lms.util.ToastUtil.show("Cloud sync failed.");
                 }
             );
@@ -154,8 +204,7 @@ public class MainDashboardView {
         sidebar.getChildren().addAll(branding, sep1, navBox, sep2, userBox);
 
         // ── Main Content Area (Center) ───────────────────────────────────────
-        javafx.scene.layout.StackPane contentPane = new javafx.scene.layout.StackPane();
-        contentPane.setStyle("-fx-background-color: #f0f0f2;");
+        // (Content pane initialized at top of method)
         
         // Load the default Dashboard Metrics view
         contentPane.getChildren().add(new DashboardMetricsView().build());
@@ -199,14 +248,19 @@ public class MainDashboardView {
     }
 
     private void routeTo(Button btn, javafx.scene.layout.StackPane contentPane, javafx.scene.Node content) {
-        setActiveNavButton(btn);
-        contentPane.getChildren().setAll(content);
-        // Extract plain text from button by removing emojis/icons if necessary, or just use as is
-        String title = btn.getText();
-        if (title.contains(" ")) {
-            title = title.substring(title.indexOf(" ") + 1);
+        if (btn != null) {
+            setActiveNavButton(btn);
         }
-        com.lms.util.Navigator.setTitle(title);
+        contentPane.getChildren().setAll(content);
+        
+        String title = "Settings";
+        if (btn != null) {
+            title = btn.getText();
+            if (title.contains(" ")) {
+                title = title.substring(title.indexOf(" ") + 1);
+            }
+        }
+        try { com.lms.util.Navigator.setTitle(title); } catch (Exception e) {}
     }
 
     private void setActiveNavButton(Button activeBtn) {

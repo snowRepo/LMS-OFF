@@ -159,6 +159,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                                 alert.initOwner(txtSearch.getScene().getWindow());
                             }
                             alert.setContentText("Are you sure you want to " + (staff.isActive() ? "deactivate" : "activate") + " " + staff.fullName() + "?");
+ com.lms.util.Navigator.centerDialog(alert);
                             Optional<ButtonType> result = alert.showAndWait();
                             if (result.isPresent() && result.get() == ButtonType.OK) {
                                 if (dao.toggleUserStatus(staff.id(), !staff.isActive())) {
@@ -177,6 +178,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                                 alert.initOwner(txtSearch.getScene().getWindow());
                             }
                             alert.setContentText("Are you sure you want to reset the password for " + staff.username() + "? They will be required to change it on their next login.");
+ com.lms.util.Navigator.centerDialog(alert);
                             Optional<ButtonType> result = alert.showAndWait();
                             if (result.isPresent() && result.get() == ButtonType.OK) {
                                 String tempPass = dao.resetPassword(staff.id());
@@ -291,6 +293,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null;
         });
         
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait();
     }
     
@@ -340,6 +343,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         content.getChildren().addAll(lblHeader, flowUser, flowPass, btnCopy, lblInfo);
         
         alert.getDialogPane().setContent(content);
+        com.lms.util.Navigator.centerDialog(alert);
         alert.showAndWait();
     }
 }

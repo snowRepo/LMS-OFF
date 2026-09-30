@@ -264,6 +264,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null;
         });
         
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait().ifPresent(success -> {
             if (success) {
                 com.lms.util.ToastUtil.show("Member checked in successfully!");

@@ -140,6 +140,7 @@ public class SettingsView {
             ToastUtil.show("Password changed successfully.");
         });
 
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait();
     }
 
@@ -193,6 +194,7 @@ public class SettingsView {
             ToastUtil.show("PIN changed successfully.");
         });
 
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait();
     }
 
@@ -257,31 +259,36 @@ public class SettingsView {
     private VBox buildDatabaseConnectionSection() {
         VBox card = buildSectionCard("Database Connection (Cloud Sync)");
 
-        GridPane grid = new GridPane();
-        grid.setHgap(12);
-        grid.setVgap(12);
+        VBox form = new VBox(12);
+        form.setMaxWidth(350);
 
         ComboBox<String> cbType = new ComboBox<>();
         cbType.getItems().addAll("PostgreSQL", "MySQL", "MariaDB");
+        cbType.setPromptText("Database Type");
+        cbType.setMaxWidth(Double.MAX_VALUE);
         cbType.setValue("PostgreSQL");
         
         TextField txtHost = new TextField();
-        txtHost.setPromptText("e.g. db.abc.supabase.co");
+        txtHost.setPromptText("Host (e.g. ep-cool-butterfly-12345.aws.neon.tech)");
+        txtHost.setMaxWidth(Double.MAX_VALUE);
+        
         TextField txtPort = new TextField();
-        txtPort.setPromptText("5432");
+        txtPort.setPromptText("Port (e.g. 5432)");
+        txtPort.setMaxWidth(Double.MAX_VALUE);
+        
         TextField txtDbName = new TextField();
-        txtDbName.setPromptText("postgres");
+        txtDbName.setPromptText("Database Name");
+        txtDbName.setMaxWidth(Double.MAX_VALUE);
+        
         TextField txtUser = new TextField();
-        txtUser.setPromptText("postgres");
+        txtUser.setPromptText("Username");
+        txtUser.setMaxWidth(Double.MAX_VALUE);
+        
         PasswordField txtPass = new PasswordField();
-        txtPass.setPromptText("password");
+        txtPass.setPromptText("Password");
+        txtPass.setMaxWidth(Double.MAX_VALUE);
 
-        grid.add(new Label("DB Type:"), 0, 0); grid.add(cbType, 1, 0);
-        grid.add(new Label("Host:"), 0, 1);    grid.add(txtHost, 1, 1);
-        grid.add(new Label("Port:"), 0, 2);    grid.add(txtPort, 1, 2);
-        grid.add(new Label("DB Name:"), 0, 3); grid.add(txtDbName, 1, 3);
-        grid.add(new Label("Username:"), 0, 4);grid.add(txtUser, 1, 4);
-        grid.add(new Label("Password:"), 0, 5);grid.add(txtPass, 1, 5);
+        form.getChildren().addAll(cbType, txtHost, txtPort, txtDbName, txtUser, txtPass);
 
         // Load existing
         SyncConfigDAO.SyncConfig conf = syncConfigDAO.getConfig();
@@ -296,14 +303,20 @@ public class SettingsView {
 
         HBox btns = new HBox(12);
         Button btnTest = new Button("Test Connection");
-        Button btnSave = new Button("Save & Connect");
-        btnSave.setDisable(true);
+        
+        boolean isConnected = (conf != null && conf.isEnabled());
+        Button btnSave = new Button(isConnected ? "Disconnect" : "Save & Connect");
+        if (isConnected) {
+            btnSave.setDisable(false);
+        } else {
+            btnSave.setDisable(true);
+        }
 
         Label lblStatus = new Label();
 
         btnTest.setOnAction(e -> {
             lblStatus.setText("Testing...");
-            lblStatus.setStyle("-fx-text-fill: #3b82f6;");
+            lblStatus.setStyle("-fx-text-fill: #039ED3;");
             btnSave.setDisable(true);
             new Thread(() -> {
                 boolean ok = syncManager.testConnection(
@@ -314,6 +327,8 @@ public class SettingsView {
                     if (ok) {
                         lblStatus.setText("✓ Connection successful!");
                         lblStatus.setStyle("-fx-text-fill: #22c55e;");
+                        btnSave.setText("Save & Connect");
+                        btnSave.setStyle("");
                         btnSave.setDisable(false);
                     } else {
                         lblStatus.setText("✗ Connection failed. Check credentials.");
@@ -324,19 +339,49 @@ public class SettingsView {
         });
 
         btnSave.setOnAction(e -> {
-            syncConfigDAO.saveConfig(
-                    cbType.getValue(), txtHost.getText(), txtPort.getText(),
-                    txtDbName.getText(), txtUser.getText(), txtPass.getText()
-            );
-            ToastUtil.show("Database configuration saved!");
-            lblStatus.setText("Configuration saved. You can now sync.");
-            btnSave.setDisable(true); // require retest if changed
+            if ("Disconnect".equals(btnSave.getText())) {
+                syncConfigDAO.setEnabled(false);
+                btnSave.setText("Save & Connect");
+                btnSave.setDisable(false); // Can be immediately re-saved if test was already OK, but wait, typing resets it anyway
+                lblStatus.setText("Disconnected.");
+                lblStatus.setStyle("-fx-text-fill: #666666;");
+                ToastUtil.show("Cloud database disconnected.");
+                com.lms.util.GlobalState.refreshSyncState();
+            } else {
+                btnSave.setText("Saving & Connecting...");
+                btnSave.setDisable(true);
+                
+                syncConfigDAO.saveConfig(
+                        cbType.getValue(), txtHost.getText(), txtPort.getText(),
+                        txtDbName.getText(), txtUser.getText(), txtPass.getText(), true
+                );
+                
+                syncManager.sync(
+                    () -> { // onSuccess
+                        ToastUtil.show("Database configured and synced successfully!");
+                        lblStatus.setText("Connected and Synced.");
+                        lblStatus.setStyle("-fx-text-fill: #22c55e;");
+                        btnSave.setText("Disconnect");
+                        btnSave.setDisable(false);
+                        com.lms.util.GlobalState.refreshSyncState();
+                    },
+                    () -> { // onFailure
+                        lblStatus.setText("Sync failed. Check credentials.");
+                        lblStatus.setStyle("-fx-text-fill: #ef4444;");
+                        btnSave.setText("Save & Connect");
+                        btnSave.setDisable(false);
+                        com.lms.util.GlobalState.refreshSyncState();
+                    }
+                );
+            }
         });
 
         // if user types something, disable save until re-tested
         javafx.beans.value.ChangeListener<String> resetSave = (obs, oldV, newV) -> {
-            btnSave.setDisable(true);
-            lblStatus.setText("");
+            if (!"Disconnect".equals(btnSave.getText())) {
+                btnSave.setDisable(true);
+                lblStatus.setText("");
+            }
         };
         cbType.valueProperty().addListener(resetSave);
         txtHost.textProperty().addListener(resetSave);
@@ -345,10 +390,11 @@ public class SettingsView {
         txtUser.textProperty().addListener(resetSave);
         txtPass.textProperty().addListener(resetSave);
 
-        btns.getChildren().addAll(btnTest, btnSave, lblStatus);
-        btns.setAlignment(Pos.CENTER_LEFT);
-
-        card.getChildren().addAll(grid, btns);
+        btns.getChildren().addAll(btnTest, btnSave);
+        
+        VBox statusBox = new VBox(5, btns, lblStatus);
+        
+        card.getChildren().addAll(form, statusBox);
         return card;
     }
 
@@ -396,6 +442,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
             alert.setContentText("This will clear all tables in your cloud database. Your local data will be untouched.");
         }
 
+        com.lms.util.Navigator.centerDialog(alert);
         alert.showAndWait().ifPresent(btn -> {
             if (btn == ButtonType.OK) {
                 if (isBoth || isCloud) {
@@ -469,22 +516,107 @@ alert.initOwner(com.lms.util.Navigator.getStage());
         lblSub.setStyle("-fx-font-size: 11px; -fx-text-fill: #71717a;");
         brandBox.getChildren().addAll(lblLMS, lblSub);
 
-        Label lblVersion = new Label("Version: 1.0.0");
+        Label lblVersion = new Label("Version: " + com.lms.util.UpdateManager.CURRENT_VERSION);
 
         card.getChildren().addAll(brandBox, lblVersion);
 
         if ("ADMIN".equals(currentUser.role())) {
             Button btnUpdate = new Button("Check for Updates");
             btnUpdate.setOnAction(e -> {
-                btnUpdate.setText("Checking...");
-                btnUpdate.setDisable(true);
+                javafx.scene.control.Dialog<Void> dialog = new javafx.scene.control.Dialog<>();
+                dialog.setTitle("Software Update");
+                dialog.setHeaderText("Checking for updates...");
+                
+                VBox dialogContent = new VBox(16);
+                dialogContent.setAlignment(Pos.CENTER);
+                dialogContent.setPadding(new Insets(20));
+                
+                javafx.scene.control.ProgressIndicator spinner = new javafx.scene.control.ProgressIndicator();
+                spinner.setStyle("-fx-accent: #039ED3;");
+                Label lblStatus = new Label("Connecting to GitHub to fetch latest release...");
+                lblStatus.setStyle("-fx-text-fill: #71717a;");
+                
+                dialogContent.getChildren().addAll(spinner, lblStatus);
+                dialog.getDialogPane().setContent(dialogContent);
+                dialog.getDialogPane().getButtonTypes().add(javafx.scene.control.ButtonType.CANCEL);
+                
+                dialog.show();
+                
                 new Thread(() -> {
-                    try { Thread.sleep(2000); } catch (InterruptedException ex) {}
-                    Platform.runLater(() -> {
-                        ToastUtil.show("You are on the latest version.");
-                        btnUpdate.setText("Check for Updates");
-                        btnUpdate.setDisable(false);
-                    });
+                    try {
+                        java.util.Optional<com.lms.util.UpdateManager.ReleaseInfo> opt = com.lms.util.UpdateManager.checkForUpdates();
+                        Platform.runLater(() -> {
+                            if (opt.isPresent()) {
+                                com.lms.util.UpdateManager.ReleaseInfo info = opt.get();
+                                dialog.setHeaderText("Update Available: " + info.version());
+                                lblStatus.setText("A new version is available! Do you want to download it?");
+                                spinner.setVisible(false);
+                                spinner.setManaged(false);
+                                
+                                ButtonType btnDownload = new ButtonType("Download", ButtonBar.ButtonData.OK_DONE);
+                                dialog.getDialogPane().getButtonTypes().setAll(btnDownload, ButtonType.CANCEL);
+                                
+                                javafx.scene.control.Button downBtn = (javafx.scene.control.Button) dialog.getDialogPane().lookupButton(btnDownload);
+                                downBtn.setStyle("-fx-background-color: #039ED3; -fx-text-fill: white; -fx-font-weight: bold;");
+                                
+                                downBtn.addEventFilter(javafx.event.ActionEvent.ACTION, ev -> {
+                                    ev.consume();
+                                    downBtn.setDisable(true);
+                                    dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setDisable(true);
+                                    
+                                    dialog.setHeaderText("Downloading Update...");
+                                    lblStatus.setText("Starting download...");
+                                    
+                                    javafx.scene.control.ProgressBar progressBar = new javafx.scene.control.ProgressBar(0.0);
+                                    progressBar.setStyle("-fx-accent: #039ED3;");
+                                    progressBar.setMaxWidth(Double.MAX_VALUE);
+                                    progressBar.setPrefWidth(300);
+                                    
+                                    dialogContent.getChildren().clear();
+                                    dialogContent.getChildren().addAll(progressBar, lblStatus);
+                                    
+                                    new Thread(() -> {
+                                        try {
+                                            java.io.File installer = com.lms.util.UpdateManager.downloadUpdate(info.downloadUrl(), progress -> {
+                                                Platform.runLater(() -> {
+                                                    progressBar.setProgress(progress);
+                                                    lblStatus.setText(String.format("Downloading... %d%%", (int)(progress * 100)));
+                                                });
+                                            });
+                                            Platform.runLater(() -> {
+                                                lblStatus.setText("Launching installer...");
+                                                progressBar.setProgress(1.0);
+                                                try {
+                                                    com.lms.util.UpdateManager.executeUpdate(installer);
+                                                } catch(Exception ex) {
+                                                    lblStatus.setText("Failed to launch installer.");
+                                                }
+                                            });
+                                        } catch (Exception ex) {
+                                            Platform.runLater(() -> {
+                                                lblStatus.setText("Download failed: " + ex.getMessage());
+                                                dialog.getDialogPane().lookupButton(ButtonType.CANCEL).setDisable(false);
+                                            });
+                                        }
+                                    }).start();
+                                });
+                            } else {
+                                dialog.setHeaderText("Up to Date");
+                                spinner.setVisible(false);
+                                spinner.setManaged(false);
+                                lblStatus.setText("You are running the latest version (" + com.lms.util.UpdateManager.CURRENT_VERSION + ").");
+                                dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK);
+                            }
+                        });
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            dialog.setHeaderText("Update Check Failed");
+                            spinner.setVisible(false);
+                            spinner.setManaged(false);
+                            lblStatus.setText(ex.getMessage());
+                            dialog.getDialogPane().getButtonTypes().setAll(ButtonType.OK);
+                        });
+                    }
                 }).start();
             });
             card.getChildren().add(btnUpdate);

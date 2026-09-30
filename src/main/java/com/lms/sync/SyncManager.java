@@ -39,7 +39,7 @@ public class SyncManager {
             return String.format("jdbc:mysql://%s:%s/%s?useSSL=false&allowPublicKeyRetrieval=true", host, port, dbName);
         } else {
             // PostgreSQL
-            return String.format("jdbc:postgresql://%s:%s/%s", host, port, dbName);
+            return String.format("jdbc:postgresql://%s:%s/%s?sslmode=require&stringtype=unspecified", host, port, dbName);
         }
     }
 
@@ -51,7 +51,7 @@ public class SyncManager {
         String text = isPostgres ? "TEXT" : "VARCHAR(255)";
         
         try (Statement stmt = cloud.createStatement()) {
-            stmt.execute("CREATE TABLE IF NOT EXISTS users (id " + integer + " PRIMARY KEY, full_name " + text + ", username " + text + ", email " + text + ", phone " + text + ", dob " + text + ", password_hash " + text + ", pin_hash " + text + ", role " + text + ", is_active " + integer + ", must_change_password " + integer + ", created_at " + datetime + ", updated_at " + datetime + ")");
+            stmt.execute("CREATE TABLE IF NOT EXISTS users (id " + integer + " PRIMARY KEY, full_name " + text + ", username " + text + ", email " + text + ", phone " + text + ", dob " + text + ", password_hash " + text + ", pin_hash " + text + ", role " + text + ", is_active " + integer + ", must_change_password " + integer + ", last_password_change " + datetime + ", created_at " + datetime + ", updated_at " + datetime + ")");
             stmt.execute("CREATE TABLE IF NOT EXISTS members (id " + integer + " PRIMARY KEY, member_code " + text + ", full_name " + text + ", email " + text + ", phone " + text + ", address " + text + ", dob " + text + ", is_active " + integer + ", joined_date " + text + ", created_at " + datetime + ", updated_at " + datetime + ")");
             stmt.execute("CREATE TABLE IF NOT EXISTS categories (id " + integer + " PRIMARY KEY, name " + text + ", description " + text + ", is_active " + integer + ", created_at " + datetime + ", updated_at " + datetime + ")");
             stmt.execute("CREATE TABLE IF NOT EXISTS books (id " + integer + " PRIMARY KEY, title " + text + ", author " + text + ", isbn " + text + ", category_id " + integer + ", total_copies " + integer + ", available_copies " + integer + ", published_year " + integer + ", description " + text + ", created_at " + datetime + ", updated_at " + datetime + ")");
@@ -124,7 +124,7 @@ public class SyncManager {
     private void upsertToCloud(Connection local, Connection cloud, String table, String recordId) throws SQLException {
         String selectLocal = "SELECT * FROM " + table + " WHERE id = ?";
         try (PreparedStatement psLocal = local.prepareStatement(selectLocal)) {
-            psLocal.setString(1, recordId);
+            psLocal.setInt(1, Integer.parseInt(recordId));
             try (ResultSet rsLocal = psLocal.executeQuery()) {
                 if (!rsLocal.next()) return;
 
@@ -134,7 +134,7 @@ public class SyncManager {
                 // Check if exists remotely
                 boolean existsRemotely = false;
                 try (PreparedStatement check = cloud.prepareStatement("SELECT 1 FROM " + table + " WHERE id = ?")) {
-                    check.setString(1, recordId);
+                    check.setInt(1, Integer.parseInt(recordId));
                     try (ResultSet rsCheck = check.executeQuery()) {
                         existsRemotely = rsCheck.next();
                     }
@@ -160,10 +160,10 @@ public class SyncManager {
                         int paramIdx = 1;
                         for (int i = 1; i <= cols; i++) {
                             if (!"id".equalsIgnoreCase(meta.getColumnName(i))) {
-                                psUpdate.setObject(paramIdx++, rsLocal.getObject(i));
+                                psUpdate.setObject(paramIdx++, sanitizeSyncValue(rsLocal.getObject(i), meta.getColumnName(i)));
                             }
                         }
-                        psUpdate.setString(paramIdx, recordId);
+                        psUpdate.setInt(paramIdx, Integer.parseInt(recordId));
                         psUpdate.executeUpdate();
                     }
                 } else {
@@ -181,7 +181,7 @@ public class SyncManager {
                     String insertStr = "INSERT INTO " + table + " (" + colsStr + ") VALUES (" + valsStr + ")";
                     try (PreparedStatement psInsert = cloud.prepareStatement(insertStr)) {
                         for (int i = 1; i <= cols; i++) {
-                            psInsert.setObject(i, rsLocal.getObject(i));
+                            psInsert.setObject(i, sanitizeSyncValue(rsLocal.getObject(i), meta.getColumnName(i)));
                         }
                         psInsert.executeUpdate();
                     }
@@ -189,10 +189,20 @@ public class SyncManager {
             }
         }
     }
+    
+    private Object sanitizeSyncValue(Object val, String colName) {
+        if (val instanceof Number) {
+            String c = colName.toLowerCase();
+            if (c.endsWith("_at") || c.endsWith("_date") || c.endsWith("_change")) {
+                return new java.sql.Timestamp(((Number) val).longValue());
+            }
+        }
+        return val;
+    }
 
     private void deleteOnCloud(Connection cloud, String table, String recordId) throws SQLException {
         try (PreparedStatement ps = cloud.prepareStatement("DELETE FROM " + table + " WHERE id = ?")) {
-            ps.setString(1, recordId);
+            ps.setInt(1, Integer.parseInt(recordId));
             ps.executeUpdate();
         }
     }

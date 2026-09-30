@@ -69,4 +69,17 @@ public class Navigator {
     public static void setTitle(String title) {
         primaryStage.setTitle(title);
     }
+    
+    public static void centerDialog(javafx.scene.control.Dialog<?> dialog) {
+        dialog.setOnShown(e -> {
+            javafx.stage.Window owner = dialog.getOwner();
+            if (owner == null) {
+                owner = primaryStage;
+            }
+            if (owner != null) {
+                dialog.setX(owner.getX() + (owner.getWidth() - dialog.getWidth()) / 2);
+                dialog.setY(owner.getY() + (owner.getHeight() - dialog.getHeight()) / 2);
+            }
+        });
+    }
 }

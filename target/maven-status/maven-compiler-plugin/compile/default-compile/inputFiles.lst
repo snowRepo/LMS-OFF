@@ -33,6 +33,9 @@
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/ReportsView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/SettingsView.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/ui/StaffView.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/util/BookApiUtil.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/util/GlobalState.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/Navigator.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/ReportExporter.java
 /Users/snow/LMS-OFF/src/main/java/com/lms/util/ToastUtil.java
+/Users/snow/LMS-OFF/src/main/java/com/lms/util/UpdateManager.java

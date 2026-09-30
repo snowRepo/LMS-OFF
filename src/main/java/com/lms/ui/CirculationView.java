@@ -157,6 +157,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                                 }
                                 alert.setContentText("Are you sure you want to mark this book as returned?");
                                 
+                                com.lms.util.Navigator.centerDialog(alert);
                                 alert.showAndWait().ifPresent(result -> {
                                     if (result == ButtonType.OK) {
                                         if (dao.returnBook(rec.id(), rec.bookId())) {
@@ -217,9 +218,13 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         layout.setPrefWidth(400);
         layout.setMinHeight(230);
         
+        // --- Member Search (declared early for focus logic) ---
+        TextField txtMemberSearch = new TextField();
+        txtMemberSearch.setPromptText("Search Member Name...");
+        
         // --- Book Search ---
         TextField txtBookSearch = new TextField();
-        txtBookSearch.setPromptText("Search Book Title...");
+        txtBookSearch.setPromptText("Scan ISBN or Search Book Title...");
         VBox lvBooks = new VBox();
         lvBooks.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
         lvBooks.setVisible(false);
@@ -241,6 +246,40 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         boolean[] ignoreMemberSearch = new boolean[]{false};
         
         BookDAO bookDao = new BookDAO();
+        
+        txtBookSearch.setOnAction(e -> {
+            String val = txtBookSearch.getText();
+            if (val != null && !val.trim().isEmpty()) {
+                java.util.List<BookDAO.Book> results = bookDao.getBooks(val, null, 0, 1);
+                if (!results.isEmpty()) {
+                    BookDAO.Book b = results.get(0);
+                    String cleanVal = val.replaceAll("[^0-9Xx]", "");
+                    String cleanIsbn = b.isbn() != null ? b.isbn().replaceAll("[^0-9Xx]", "") : "";
+                    
+                    boolean exactIsbn = (!cleanVal.isEmpty() && cleanVal.equals(cleanIsbn));
+                    boolean exactTitle = b.title().equalsIgnoreCase(val.trim());
+                    
+                    if (exactIsbn || exactTitle) {
+                        if (b.availableCopies() > 0) {
+                            finalSelectedBook[0] = b;
+                            ignoreBookSearch[0] = true;
+                            txtBookSearch.setText(b.title());
+                            ignoreBookSearch[0] = false;
+                            lvBooks.setVisible(false);
+                            lvBooks.setManaged(false);
+                            validate.run();
+                            txtMemberSearch.requestFocus();
+                        } else {
+                            com.lms.util.ToastUtil.show("Book is out of stock.");
+                        }
+                    } else {
+                        com.lms.util.ToastUtil.show("Please select the exact book from the list.");
+                    }
+                } else {
+                    com.lms.util.ToastUtil.show("Book not found in catalog.");
+                }
+            }
+        });
         txtBookSearch.textProperty().addListener((obs, old, val) -> {
             if (ignoreBookSearch[0]) return;
             finalSelectedBook[0] = null;
@@ -287,9 +326,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         
         // ListCell factory removed since we use Labels now
 
-        // --- Member Search ---
-        TextField txtMemberSearch = new TextField();
-        txtMemberSearch.setPromptText("Search Member Name...");
+        // --- Member Search (Initialization continued) ---
         VBox lvMembers = new VBox();
         lvMembers.setStyle("-fx-border-color: #d1d5db; -fx-background-color: white; -fx-border-radius: 4; -fx-background-radius: 4;");
         lvMembers.setVisible(false);
@@ -367,6 +404,10 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             }
             return null; // fix for cancel bug
         });
+        com.lms.util.Navigator.centerDialog(dialog);
+        
+        // Auto-focus book search when opened
+        javafx.application.Platform.runLater(txtBookSearch::requestFocus);
         
         dialog.showAndWait().ifPresent(success -> {
             if (success) {
@@ -420,6 +461,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         grid.add(lblStatusVal, 1, 5);
         
         dialog.getDialogPane().setContent(grid);
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait();
     }
 

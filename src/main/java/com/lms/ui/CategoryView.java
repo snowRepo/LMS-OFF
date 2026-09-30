@@ -154,6 +154,7 @@ confirm.initOwner(com.lms.util.Navigator.getStage());
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
                                 confirm.initOwner(txtSearch.getScene().getWindow());
                             }
+                            com.lms.util.Navigator.centerDialog(confirm);
                             confirm.showAndWait().ifPresent(response -> {
                                 if (response == ButtonType.YES) {
                                     boolean deleted = dao.deleteCategory(cat.id());
@@ -244,6 +245,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null; // Cancel
         });
 
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait().ifPresent(success -> {
             if (success) {
                 com.lms.util.ToastUtil.show(catToEdit == null ? "Category saved successfully!" : "Category updated successfully!");

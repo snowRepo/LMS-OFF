@@ -133,6 +133,7 @@ confirm.initOwner(com.lms.util.Navigator.getStage());
                             if (txtSearch.getScene() != null && txtSearch.getScene().getWindow() != null) {
                                 confirm.initOwner(txtSearch.getScene().getWindow());
                             }
+                            com.lms.util.Navigator.centerDialog(confirm);
                             confirm.showAndWait().ifPresent(response -> {
                                 if (response == ButtonType.YES) {
                                     boolean deleted = dao.deleteBook(book.id());
@@ -192,8 +193,72 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         TextField txtAuthor = new TextField();
         txtAuthor.setPromptText("Author *");
         
+        TextField txtYear = new TextField();
+        txtYear.setPromptText("Published Year");
+        
+        TextArea txtDesc = new TextArea();
+        txtDesc.setPromptText("Description / Synopsis");
+        txtDesc.setPrefRowCount(3);
+        txtDesc.setWrapText(true);
+        
         TextField txtIsbn = new TextField();
-        txtIsbn.setPromptText("ISBN");
+        txtIsbn.setPromptText("ISBN (scan to autofill)");
+        
+        txtIsbn.setOnAction(e -> {
+            String isbn = txtIsbn.getText();
+            if (isbn == null || isbn.isBlank()) return;
+            
+            String oldTitle = txtTitle.getText();
+            String oldAuthor = txtAuthor.getText();
+            String oldYear = txtYear.getText();
+            String oldDesc = txtDesc.getText();
+            
+            txtTitle.setText("Fetching from Google Books...");
+            txtAuthor.setText("...");
+            txtYear.setText("...");
+            txtDesc.setText("...");
+            txtTitle.setDisable(true);
+            txtAuthor.setDisable(true);
+            txtYear.setDisable(true);
+            txtDesc.setDisable(true);
+            
+            new Thread(() -> {
+                try {
+                    java.util.Optional<com.lms.util.BookApiUtil.BookMetadata> metaOpt = com.lms.util.BookApiUtil.fetchBookByIsbn(isbn);
+                    javafx.application.Platform.runLater(() -> {
+                        if (metaOpt.isPresent()) {
+                            com.lms.util.BookApiUtil.BookMetadata meta = metaOpt.get();
+                            txtTitle.setText(meta.title());
+                            txtAuthor.setText(meta.author());
+                            txtYear.setText(meta.publishedYear());
+                            txtDesc.setText(meta.description());
+                        } else {
+                            txtTitle.setText(oldTitle);
+                            txtAuthor.setText(oldAuthor);
+                            txtYear.setText(oldYear);
+                            txtDesc.setText(oldDesc);
+                            com.lms.util.ToastUtil.show("Book not found. Please enter manually.");
+                        }
+                        txtTitle.setDisable(false);
+                        txtAuthor.setDisable(false);
+                        txtYear.setDisable(false);
+                        txtDesc.setDisable(false);
+                    });
+                } catch (Exception ex) {
+                    javafx.application.Platform.runLater(() -> {
+                        txtTitle.setText(oldTitle);
+                        txtAuthor.setText(oldAuthor);
+                        txtYear.setText(oldYear);
+                        txtDesc.setText(oldDesc);
+                        com.lms.util.ToastUtil.show("Network error. Please enter manually.");
+                        txtTitle.setDisable(false);
+                        txtAuthor.setDisable(false);
+                        txtYear.setDisable(false);
+                        txtDesc.setDisable(false);
+                    });
+                }
+            }).start();
+        });
         
         TextField txtCatSearch = new TextField();
         txtCatSearch.setPromptText("Search Category...");
@@ -246,13 +311,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
         TextField txtCopies = new TextField();
         txtCopies.setPromptText("Total Copies * (e.g. 1)");
         
-        TextField txtYear = new TextField();
-        txtYear.setPromptText("Published Year");
-        
-        TextArea txtDesc = new TextArea();
-        txtDesc.setPromptText("Description");
-        txtDesc.setPrefRowCount(3);
-        txtDesc.setWrapText(true);
+
 
         if (bookToEdit != null) {
             txtTitle.setText(bookToEdit.title());
@@ -269,7 +328,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
 
         // Add to VBox directly using placeholders
         layout.getChildren().addAll(
-            txtTitle, txtAuthor, txtIsbn, txtCatSearch, lvCat, txtCopies, txtYear, txtDesc
+            txtIsbn, txtTitle, txtAuthor, txtYear, txtCatSearch, lvCat, txtCopies, txtDesc
         );
 
         dialog.getDialogPane().setContent(layout);
@@ -307,6 +366,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null; // Cancel
         });
 
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait().ifPresent(success -> {
             if (success) {
                 com.lms.util.ToastUtil.show(bookToEdit == null ? "Book saved successfully!" : "Book updated successfully!");
@@ -393,6 +453,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null;
         });
         
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait().ifPresent(cat -> {
             if (cat != null) {
                 this.currentCategoryFilter = cat;

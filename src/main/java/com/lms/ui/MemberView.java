@@ -160,6 +160,7 @@ alert.initOwner(com.lms.util.Navigator.getStage());
                             }
                             alert.setContentText("Are you sure you want to " + (member.isActive() ? "deactivate" : "activate") + " " + member.fullName() + "?");
                             
+                            com.lms.util.Navigator.centerDialog(alert);
                             alert.showAndWait().ifPresent(result -> {
                                 if (result == ButtonType.OK) {
                                     boolean newStatus = !member.isActive();
@@ -268,6 +269,7 @@ dialog.initOwner(com.lms.util.Navigator.getStage());
             return null; // Cancel
         });
 
+        com.lms.util.Navigator.centerDialog(dialog);
         dialog.showAndWait().ifPresent(success -> {
             if (success) {
                 com.lms.util.ToastUtil.show(memberToEdit == null ? "Member added successfully!" : "Member updated successfully!");
