@@ -14,22 +14,11 @@ jobs:
       matrix:
         include:
           - os: macos-14
-            script: ./build_mac.sh
-            asset_path: target/installer/LMS-1.0.0.dmg
-            asset_name: LMS-macOS-AppleSilicon.dmg
-          - os: macos-13
-            script: ./build_mac.sh
-            asset_path: target/installer/LMS-1.0.0.dmg
-            asset_name: LMS-macOS-Intel.dmg
+            script: ./build_mac_all.sh
           - os: windows-latest
             script: .\build_windows.bat
-            asset_path: target/installer/LMS-1.0.0.exe
-            asset_name: LMS-Windows.exe
           - os: ubuntu-latest
             script: ./build_linux.sh
-            asset_path: target/installer/lms_1.0.0_amd64.deb
-            asset_name: LMS-Linux.deb
-
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -45,7 +34,7 @@ jobs:
 
       - name: Make scripts executable (Unix)
         if: runner.os != 'Windows'
-        run: chmod +x build_mac.sh build_linux.sh
+        run: chmod +x build_mac.sh build_linux.sh build_mac_all.sh
 
       - name: Install DEB packaging tools (Linux)
         if: runner.os == 'Linux'
@@ -58,17 +47,9 @@ jobs:
       - name: Build Installer
         run: ${{ matrix.script }}
 
-      - name: Rename Asset (Unix)
-        if: runner.os != 'Windows'
-        run: mv target/installer/*.* target/installer/${{ matrix.asset_name }}
-
-      - name: Rename Asset (Windows)
-        if: runner.os == 'Windows'
-        run: Rename-Item -Path ${{ matrix.asset_path }} -NewName ${{ matrix.asset_name }}
-
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: target/installer/${{ matrix.asset_name }}
+          files: target/installer/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -14,7 +14,8 @@ jpackage --type deb \
   --input "target" \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.App" \
-  --linux-shortcut \
   --linux-menu-group "Office"
+
+mv target/installer/*.deb target/installer/LMS-Linux.deb
 
 echo "Done! Installer is in target/installer/"

@@ -17,4 +17,6 @@ jpackage --type exe ^
   --win-dir-chooser ^
   --win-shortcut
 
+ren target\installer\LMS-1.0.0.exe LMS-Windows.exe
+
 echo Done! Installer is in target\installer\
