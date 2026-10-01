@@ -18,7 +18,7 @@ jobs:
             asset_path: target/installer/LMS-1.0.0.dmg
             asset_name: LMS-macOS.dmg
           - os: windows-latest
-            script: build_windows.bat
+            script: .\build_windows.bat
             asset_path: target/installer/LMS-1.0.0.exe
             asset_name: LMS-Windows.exe
           - os: ubuntu-latest

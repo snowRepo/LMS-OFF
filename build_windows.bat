@@ -18,4 +18,3 @@ jpackage --type exe ^
   --win-shortcut
 
 echo Done! Installer is in target\installer\
-pause
