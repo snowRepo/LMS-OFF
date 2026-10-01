@@ -14,7 +14,6 @@ jpackage --type dmg \
   --input "target" \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.App" \
-  --mac-package-name "LMS" \
-  --resource-dir "src/main/resources/packaging/mac"
+  --mac-package-name "LMS"
 
 echo "Done! Installer is in target/installer/"

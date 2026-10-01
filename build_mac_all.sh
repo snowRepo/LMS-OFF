@@ -32,8 +32,7 @@ jpackage --type dmg \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.App" \
   --runtime-image dist/arm/runtime \
-  --mac-package-name "LMS" \
-  --resource-dir "src/main/resources/packaging/mac"
+  --mac-package-name "LMS"
 
 echo "Downloading Intel JDK 17 for cross-compilation..."
 curl -fsSL "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz" -o /tmp/jdk-intel.tar.gz
@@ -62,7 +61,6 @@ arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jpackage --type dmg \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.App" \
   --runtime-image dist/intel/runtime \
-  --mac-package-name "LMS" \
-  --resource-dir "src/main/resources/packaging/mac"
+  --mac-package-name "LMS"
 
 echo "Done! Installers are in target/installer/"
