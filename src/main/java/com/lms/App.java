@@ -27,6 +27,34 @@ public class App extends Application {
         // Set up navigator
         Navigator.init(primaryStage);
         primaryStage.setTitle("LMS");
+        
+        // Set cross-platform taskbar/dock icon during development
+        try {
+            java.net.URL iconUrl = App.class.getResource("/icons/icon.png");
+            if (iconUrl != null) {
+                String osName = System.getProperty("os.name").toLowerCase();
+                
+                // For Windows/Linux title bar & taskbar (macOS doesn't use title bar icons)
+                if (!osName.contains("mac")) {
+                    primaryStage.getIcons().add(new javafx.scene.image.Image(iconUrl.toExternalForm()));
+                }
+                
+                // For macOS Dock (requires Java 9+)
+                if (osName.contains("mac") && java.awt.Taskbar.isTaskbarSupported()) {
+                    java.net.URL macIconUrl = App.class.getResource("/icons/icon_macos.png");
+                    if (macIconUrl != null) {
+                        java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
+                        if (taskbar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                            java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(macIconUrl);
+                            taskbar.setIconImage(img);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to set app icon: " + e.getMessage());
+        }
+
         // Window is now resizable
 
         AuthService authService = new AuthService();

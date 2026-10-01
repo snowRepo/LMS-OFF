@@ -22,7 +22,6 @@ public class GlobalState {
         com.lms.db.SyncConfigDAO.SyncConfig config = syncDao.getConfig();
         String initialStatus = "● Offline";
         String initialColor = "#71717a";
-        
         if (config != null && config.isEnabled()) {
             if (config.lastSyncTime() != null && !config.lastSyncTime().isEmpty()) {
                 String shortTime = config.lastSyncTime();

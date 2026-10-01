@@ -53,6 +53,8 @@ public class SettingsView {
         if ("ADMIN".equals(currentUser.role())) {
             root.getChildren().add(buildDatabaseConnectionSection());
             root.getChildren().add(buildDataWipeSection());
+        } else {
+            root.getChildren().add(buildLibrarianSyncSection());
         }
 
         // About Section (All Users)
@@ -254,6 +256,49 @@ public class SettingsView {
                 field.setText(field.getText().substring(0, 6));
             }
         });
+    }
+
+    private VBox buildLibrarianSyncSection() {
+        VBox card = buildSectionCard("Cloud Sync Connection");
+        
+        SyncConfigDAO.SyncConfig conf = syncConfigDAO.getConfig();
+        if (conf == null || conf.dbType() == null || conf.dbType().isEmpty()) {
+            Label lblNotConfig = new Label("Cloud Sync has not been configured by an Administrator.");
+            lblNotConfig.setStyle("-fx-text-fill: #71717a;");
+            card.getChildren().add(lblNotConfig);
+            return card;
+        }
+
+        Label lblInfo = new Label("Cloud Database is configured and ready.");
+        lblInfo.setStyle("-fx-text-fill: #18181b;");
+
+        boolean isConnected = conf.isEnabled();
+        Button btnToggle = new Button(isConnected ? "Disconnect" : "Connect");
+        Label lblStatus = new Label(isConnected ? "Connected to Cloud" : "Disconnected");
+        lblStatus.setStyle(isConnected ? "-fx-text-fill: #22c55e;" : "-fx-text-fill: #71717a;");
+
+        btnToggle.setOnAction(e -> {
+            boolean turningOn = "Connect".equals(btnToggle.getText());
+            syncConfigDAO.setEnabled(turningOn);
+            if (turningOn) {
+                btnToggle.setText("Disconnect");
+                lblStatus.setText("Connected to Cloud");
+                lblStatus.setStyle("-fx-text-fill: #22c55e;");
+                ToastUtil.show("Connected to Cloud Database.");
+            } else {
+                btnToggle.setText("Connect");
+                lblStatus.setText("Disconnected");
+                lblStatus.setStyle("-fx-text-fill: #71717a;");
+                ToastUtil.show("Disconnected from Cloud.");
+            }
+            com.lms.util.GlobalState.refreshSyncState();
+        });
+
+        HBox btns = new HBox(12, btnToggle, lblStatus);
+        btns.setAlignment(Pos.CENTER_LEFT);
+        
+        card.getChildren().addAll(lblInfo, btns);
+        return card;
     }
 
     private VBox buildDatabaseConnectionSection() {
