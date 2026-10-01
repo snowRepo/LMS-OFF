@@ -69,14 +69,25 @@ public class UpdateManager {
                 
                 // Find correct asset for OS
                 String os = System.getProperty("os.name").toLowerCase();
-                String ext = os.contains("win") ? ".exe" : os.contains("mac") ? ".dmg" : ".deb"; // fallback linux
+                String arch = System.getProperty("os.arch").toLowerCase();
+                String ext;
+                String archMatch = "";
+                
+                if (os.contains("win")) {
+                    ext = ".exe";
+                } else if (os.contains("mac")) {
+                    ext = ".dmg";
+                    archMatch = (arch.contains("aarch64") || arch.contains("arm")) ? "AppleSilicon" : "Intel";
+                } else {
+                    ext = ".deb";
+                }
                 
                 if (json.has("assets") && json.get("assets").isJsonArray()) {
                     JsonArray assets = json.getAsJsonArray("assets");
                     for (int i = 0; i < assets.size(); i++) {
                         JsonObject asset = assets.get(i).getAsJsonObject();
                         String assetName = asset.get("name").getAsString();
-                        if (assetName.endsWith(ext)) {
+                        if (assetName.endsWith(ext) && (archMatch.isEmpty() || assetName.contains(archMatch))) {
                             String downloadUrl = asset.get("browser_download_url").getAsString();
                             return Optional.of(new ReleaseInfo(tagName, body, downloadUrl));
                         }
