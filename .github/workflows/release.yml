@@ -16,7 +16,11 @@ jobs:
           - os: macos-14
             script: ./build_mac.sh
             asset_path: target/installer/LMS-1.0.0.dmg
-            asset_name: LMS-macOS.dmg
+            asset_name: LMS-macOS-AppleSilicon.dmg
+          - os: macos-13
+            script: ./build_mac.sh
+            asset_path: target/installer/LMS-1.0.0.dmg
+            asset_name: LMS-macOS-Intel.dmg
           - os: windows-latest
             script: .\build_windows.bat
             asset_path: target/installer/LMS-1.0.0.exe
@@ -46,9 +50,17 @@ jobs:
       - name: Build Installer
         run: ${{ matrix.script }}
 
+      - name: Rename Asset (Unix)
+        if: runner.os != 'Windows'
+        run: mv ${{ matrix.asset_path }} target/installer/${{ matrix.asset_name }}
+
+      - name: Rename Asset (Windows)
+        if: runner.os == 'Windows'
+        run: Rename-Item -Path ${{ matrix.asset_path }} -NewName ${{ matrix.asset_name }}
+
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
         with:
-          files: ${{ matrix.asset_path }}
+          files: target/installer/${{ matrix.asset_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
