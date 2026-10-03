@@ -6,10 +6,10 @@ mvn clean package
 echo "Isolating input files..."
 rm -rf dist/input dist/arm dist/intel
 mkdir -p dist/input
-cp target/library-management-system-1.0.0.jar dist/input/
+cp target/library-management-system-1.0.1.jar dist/input/
 cp -r target/lib dist/input/
 
-MODULES="java.base,java.desktop,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.security.jgss,java.security.sasl,java.sql,java.transaction.xa,java.xml"
+MODULES="java.base,java.desktop,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.security.jgss,java.security.sasl,java.sql,java.transaction.xa,java.xml,javafx.base,javafx.controls,javafx.fxml,javafx.graphics"
 
 echo "Building Apple Silicon runtime via jlink..."
 jlink \
@@ -25,25 +25,26 @@ jpackage --type dmg \
   --name "LMS" \
   --description "Library Management System" \
   --vendor "DevApps" \
-  --app-version "1.0.0" \
+  --app-version "1.0.1" \
   --icon "src/main/resources/icons/icon.icns" \
   --dest "target/installer/arm" \
   --input "dist/input" \
-  --main-jar "library-management-system-1.0.0.jar" \
+  --main-jar "library-management-system-1.0.1.jar" \
   --main-class "com.lms.Launcher" \
   --runtime-image dist/arm/runtime \
+  --java-options "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
   --mac-package-name "LMS"
 
-mv target/installer/arm/LMS-1.0.0.dmg target/installer/LMS-macOS-AppleSilicon-1.0.0.dmg
+mv target/installer/arm/LMS-1.0.1.dmg target/installer/LMS-macOS-AppleSilicon-1.0.1.dmg
 
-echo "Downloading Intel JDK 17 for cross-compilation..."
-curl -fsSL "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz" -o /tmp/jdk-intel.tar.gz
+echo "Downloading Intel JDK 17 for cross-compilation (Liberica)..."
+curl -fsSL "https://download.bell-sw.com/java/17.0.12%2B10/bellsoft-jdk17.0.12+10-macos-amd64-full.tar.gz" -o /tmp/jdk-intel.tar.gz
 mkdir -p /tmp/intel-jdk
 tar -xzf /tmp/jdk-intel.tar.gz -C /tmp/intel-jdk --strip-components=1
 
 echo "Building Intel runtime via jlink..."
-arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jlink \
-  --module-path /tmp/intel-jdk/Contents/Home/jmods \
+arch -x86_64 /tmp/intel-jdk/bin/jlink \
+  --module-path /tmp/intel-jdk/jmods \
   --add-modules "$MODULES" \
   --output dist/intel/runtime \
   --strip-debug \
@@ -52,20 +53,21 @@ arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jlink \
   --compress=1
 
 echo "Packaging DMG for Intel (x86_64) via Rosetta 2..."
-arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jpackage --type dmg \
+arch -x86_64 /tmp/intel-jdk/bin/jpackage --type dmg \
   --name "LMS" \
   --description "Library Management System" \
   --vendor "DevApps" \
-  --app-version "1.0.0" \
+  --app-version "1.0.1" \
   --icon "src/main/resources/icons/icon.icns" \
   --dest "target/installer/intel" \
   --input "dist/input" \
-  --main-jar "library-management-system-1.0.0.jar" \
+  --main-jar "library-management-system-1.0.1.jar" \
   --main-class "com.lms.Launcher" \
   --runtime-image dist/intel/runtime \
+  --java-options "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
   --mac-package-name "LMS"
 
-mv target/installer/intel/LMS-1.0.0.dmg target/installer/LMS-macOS-Intel-1.0.0.dmg
+mv target/installer/intel/LMS-1.0.1.dmg target/installer/LMS-macOS-Intel-1.0.1.dmg
 
 echo "Done! Installers are in target/installer/"
 rm -rf target/installer/arm target/installer/intel
