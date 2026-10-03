@@ -22,17 +22,19 @@ jlink \
 
 echo "Packaging DMG for Apple Silicon (ARM64)..."
 jpackage --type dmg \
-  --name "LMS-macOS-AppleSilicon" \
+  --name "LMS" \
   --description "Library Management System" \
   --vendor "DevApps" \
   --app-version "1.0.0" \
   --icon "src/main/resources/icons/icon.icns" \
-  --dest "target/installer" \
+  --dest "target/installer/arm" \
   --input "dist/input" \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.Launcher" \
   --runtime-image dist/arm/runtime \
   --mac-package-name "LMS"
+
+mv target/installer/arm/LMS-1.0.0.dmg target/installer/LMS-macOS-AppleSilicon-1.0.0.dmg
 
 echo "Downloading Intel JDK 17 for cross-compilation..."
 curl -fsSL "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.12%2B7/OpenJDK17U-jdk_x64_mac_hotspot_17.0.12_7.tar.gz" -o /tmp/jdk-intel.tar.gz
@@ -51,16 +53,19 @@ arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jlink \
 
 echo "Packaging DMG for Intel (x86_64) via Rosetta 2..."
 arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jpackage --type dmg \
-  --name "LMS-macOS-Intel" \
+  --name "LMS" \
   --description "Library Management System" \
   --vendor "DevApps" \
   --app-version "1.0.0" \
   --icon "src/main/resources/icons/icon.icns" \
-  --dest "target/installer" \
+  --dest "target/installer/intel" \
   --input "dist/input" \
   --main-jar "library-management-system-1.0.0.jar" \
   --main-class "com.lms.Launcher" \
   --runtime-image dist/intel/runtime \
   --mac-package-name "LMS"
 
+mv target/installer/intel/LMS-1.0.0.dmg target/installer/LMS-macOS-Intel-1.0.0.dmg
+
 echo "Done! Installers are in target/installer/"
+rm -rf target/installer/arm target/installer/intel
