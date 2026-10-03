@@ -19,7 +19,7 @@ jpackage --type deb \
   --dest "target/installer" \
   --input "dist/input" \
   --main-jar "library-management-system-1.0.0.jar" \
-  --main-class "com.lms.App" \
+  --main-class "com.lms.Launcher" \
   --add-modules java.base,java.desktop,java.logging,java.management,java.management.rmi,java.naming,java.net.http,java.prefs,java.rmi,java.security.jgss,java.security.sasl,java.sql,java.transaction.xa,java.xml \
   --linux-menu-group "Office"
 

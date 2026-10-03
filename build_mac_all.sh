@@ -30,7 +30,7 @@ jpackage --type dmg \
   --dest "target/installer" \
   --input "dist/input" \
   --main-jar "library-management-system-1.0.0.jar" \
-  --main-class "com.lms.App" \
+  --main-class "com.lms.Launcher" \
   --runtime-image dist/arm/runtime \
   --mac-package-name "LMS"
 
@@ -59,7 +59,7 @@ arch -x86_64 /tmp/intel-jdk/Contents/Home/bin/jpackage --type dmg \
   --dest "target/installer" \
   --input "dist/input" \
   --main-jar "library-management-system-1.0.0.jar" \
-  --main-class "com.lms.App" \
+  --main-class "com.lms.Launcher" \
   --runtime-image dist/intel/runtime \
   --mac-package-name "LMS"
 
