@@ -43,3 +43,4 @@ buildNumber.properties
 # DB (just in case)
 *.db
 *.sqlite
+*.app
